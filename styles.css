@@ -95,21 +95,38 @@ h1 {
 .start-card .btn-daily { display: block; margin: 14px auto 0; }
 .start-card > .btn-ghost { display: block; margin: 20px auto 0; }
 
-/* Collapsible options panel (secondary) */
+/* Collapsible options panel (secondary) — styled to look clearly clickable */
 .options-panel {
   max-width: 460px; margin: 22px auto 0; text-align: left;
-  border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden;
+  background: transparent; border: none;
 }
 .options-panel summary {
-  cursor: pointer; padding: 13px 16px; font-weight: 700; color: var(--text);
+  position: relative;
+  cursor: pointer; padding: 14px 44px 14px 18px; font-weight: 700; color: var(--accent);
   list-style: none; user-select: none;
+  background: rgba(255, 210, 63, 0.09);
+  border: 2px solid rgba(255, 210, 63, 0.5); border-radius: 12px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
 }
+.options-panel summary:hover { background: rgba(255, 210, 63, 0.18); border-color: var(--accent); transform: translateY(-1px); }
 .options-panel summary::-webkit-details-marker { display: none; }
-.options-panel summary::before { content: "▸ "; color: var(--muted); }
-.options-panel[open] summary::before { content: "▾ "; }
-.options-panel[open] summary { border-bottom: 1px solid var(--line); }
+/* Rotating chevron on the right signals expandability */
+.options-panel summary::after {
+  content: "▸"; position: absolute; right: 16px; top: 50%;
+  transform: translateY(-50%); color: var(--accent); font-size: 0.95rem;
+  transition: transform 0.2s ease;
+}
+.options-panel[open] summary {
+  border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-color: var(--accent);
+}
+.options-panel[open] summary::after { transform: translateY(-50%) rotate(90deg); }
 .summary-hint { color: var(--muted); font-weight: 500; font-size: 0.85rem; }
-.options-panel .setup { margin: 14px; max-width: none; }
+.options-panel .setup {
+  margin: 0; padding: 16px; max-width: none;
+  background: var(--card);
+  border: 2px solid var(--accent); border-top: none;
+  border-radius: 0 0 12px 12px;
+}
 .rules { margin-top: 22px; }
 .rules { text-align: left; display: grid; gap: 10px; margin: 0 auto 28px; max-width: 460px; }
 .rule {
