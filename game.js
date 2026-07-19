@@ -209,6 +209,21 @@ function startGame() {
   loadQuestion();
 }
 
+// Play Again — jump straight back into the same mode/category.
+function replaySame() {
+  if (state && state.mode === "daily") { startDaily(); return; }
+  if (state) { chosenMode = state.mode; $("sel-category").value = state.category; }
+  startGame();
+}
+
+// Home — stop the game and return to the start screen.
+function goHome() {
+  if (state && state.timerId) clearInterval(state.timerId);
+  document.body.classList.remove("sudden");
+  updateDailyStatus();
+  show("screen-start");
+}
+
 function startDaily() {
   if (state && state.timerId) clearInterval(state.timerId);
   state = newState("daily", "Mixed");
@@ -718,7 +733,8 @@ function wire() {
 
   $("btn-start").addEventListener("click", startGame);
   $("btn-daily").addEventListener("click", startDaily);
-  $("btn-again").addEventListener("click", () => { updateDailyStatus(); show("screen-start"); });
+  $("btn-again").addEventListener("click", replaySame);
+  $("btn-home").addEventListener("click", goHome);
   $("btn-share").addEventListener("click", shareResult);
   $("btn-next").addEventListener("click", nextQuestion);
   $("btn-sound").addEventListener("click", toggleSound);
