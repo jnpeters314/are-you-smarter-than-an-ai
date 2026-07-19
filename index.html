@@ -19,35 +19,37 @@
     <section id="screen-start" class="screen active">
       <div class="start-card">
         <div class="title-robot">🤖</div>
-        <h1>Are You <span class="glow">Smarter</span><br />Than an AI?</h1>
+        <h1>Are You <span class="glow">Smarter</span> Than an AI?</h1>
         <p class="tagline">Answer grade-school questions. Beat the machine. Climb to&nbsp;$1,000,000.</p>
+
+        <!-- Primary action: just play -->
+        <button id="btn-start" class="btn btn-big btn-play">▶&nbsp; Start Game</button>
+        <button id="btn-daily" class="btn btn-daily">🗓️ Play Today's Daily Challenge</button>
+        <p id="daily-status" class="daily-status">One shared challenge a day — same questions for everyone.</p>
+
+        <!-- Secondary: tweak before playing -->
+        <details class="options-panel" id="options-panel">
+          <summary>⚙️ Game options <span class="summary-hint">(category &amp; mode)</span></summary>
+          <div class="setup">
+            <label class="setup-row">
+              <span class="setup-label">Category</span>
+              <select id="sel-category" class="select"></select>
+            </label>
+            <div class="setup-row">
+              <span class="setup-label">Mode</span>
+              <div class="mode-toggle">
+                <button class="mode-btn active" data-mode="classic">🪜 Classic Ladder</button>
+                <button class="mode-btn" data-mode="sudden">⚔️ Sudden Death</button>
+              </div>
+            </div>
+          </div>
+        </details>
 
         <div class="rules">
           <div class="rule"><span class="rule-ico">🎯</span> 11 questions, Grades 1&ndash;5, getting harder as you climb.</div>
           <div class="rule"><span class="rule-ico">🧠</span> The AI answers too &mdash; but it fumbles the silly stuff.</div>
           <div class="rule"><span class="rule-ico">💡</span> 3 lifelines: <b>Peek</b>, <b>Copy</b>, and <b>Save</b>.</div>
         </div>
-
-        <div class="setup">
-          <label class="setup-row">
-            <span class="setup-label">Category</span>
-            <select id="sel-category" class="select"></select>
-          </label>
-          <div class="setup-row">
-            <span class="setup-label">Mode</span>
-            <div class="mode-toggle">
-              <button class="mode-btn active" data-mode="classic">🪜 Classic Ladder</button>
-              <button class="mode-btn" data-mode="sudden">⚔️ Sudden Death</button>
-            </div>
-          </div>
-        </div>
-
-        <button id="btn-start" class="btn btn-big">Start Game</button>
-
-        <div class="or-divider"><span>or</span></div>
-
-        <button id="btn-daily" class="btn btn-daily">🗓️ Play Today's Daily Challenge</button>
-        <p id="daily-status" class="daily-status">One shared challenge a day — same questions for everyone.</p>
 
         <button id="btn-how" class="btn btn-ghost">How lifelines &amp; modes work</button>
       </div>

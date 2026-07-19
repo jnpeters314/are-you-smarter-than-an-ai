@@ -112,6 +112,12 @@ function dailySeedId() {
   const d = new Date();
   return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); // e.g. 20260719
 }
+// Sequential "Daily #N" counted from launch (2026-01-01 UTC = Day 1).
+function dailyNumber() {
+  const d = new Date();
+  const today = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  return Math.floor((today - Date.UTC(2026, 0, 1)) / 86400000) + 1;
+}
 function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -180,6 +186,7 @@ function newState(mode, category) {
     saveArmed: false,
     timerId: null,
     timeLeft: 0,
+    history: [],        // per-question {you, ai, saved} — for the share grid
   };
 }
 
@@ -400,6 +407,10 @@ function resolveAnswer(pickedIndex) {
   // Adaptive difficulty: reward correct answers, ease off after a miss.
   state.adapt = youRight ? Math.min(state.adapt + 0.5, 1.6) : Math.max(state.adapt - 1, -1);
 
+  // Record for the shareable grid (saved = wrong but rescued by the Save lifeline).
+  const wasSaved = !youRight && state.saveArmed;
+  state.history.push({ you: youRight, ai: aiRight, saved: wasSaved });
+
   if (youRight) {
     state.youCorrect++;
     if (state.mode === "sudden") state.streak++;
@@ -549,7 +560,11 @@ function endGame(won, reason) {
     } else {
       updateBest("aysta_best", winnings, fmt);
     }
-    lastResult = { mode: isDaily ? "Daily Challenge" : "Classic", won, main: fmt(winnings), you: state.youCorrect, ai: state.aiCorrect };
+    lastResult = {
+      mode: isDaily ? "Daily Challenge" : "Classic", won, main: fmt(winnings),
+      you: state.youCorrect, ai: state.aiCorrect,
+      isDaily, dailyNumber: isDaily ? dailyNumber() : null, history: state.history.slice(),
+    };
   } else {
     // ---- Sudden death ----
     $("end-stat-main").textContent = state.streak;
@@ -567,7 +582,7 @@ function endGame(won, reason) {
       sfx("wrong");
     }
     updateBest("aysta_best_streak", state.streak, String);
-    lastResult = { mode: "Sudden Death", won, main: state.streak + " streak", you: state.youCorrect, ai: state.aiCorrect };
+    lastResult = { mode: "Sudden Death", won, main: state.streak + " streak", you: state.youCorrect, ai: state.aiCorrect, isDaily: false };
   }
 
   $("end-you").textContent = state.youCorrect;
@@ -591,13 +606,26 @@ function shareResult() {
   if (!lastResult) return;
   const r = lastResult;
   const url = "https://jnpeters314.github.io/are-you-smarter-than-an-ai/";
-  const brag = r.won ? "I beat the AI" : "The AI got me";
-  const text = `🤖 Are You Smarter Than an AI? — ${r.mode}\n${brag}! Result: ${r.main} · Me ${r.you} vs AI ${r.ai}.\nThink you can do better? ${url}`;
+  const text = r.isDaily ? buildDailyShare(r, url) : buildGenericShare(r, url);
   const done = () => { $("btn-share").textContent = "✅ Copied!"; setTimeout(() => ($("btn-share").textContent = "📋 Share result"), 2000); };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
   } else fallbackCopy(text, done);
 }
+function buildGenericShare(r, url) {
+  const brag = r.won ? "I beat the AI" : "The AI got me";
+  return `🤖 Are You Smarter Than an AI? — ${r.mode}\n${brag}! Result: ${r.main} · Me ${r.you} vs AI ${r.ai}.\nThink you can do better? ${url}`;
+}
+
+// Wordle-style head-to-head grid for the Daily Challenge.
+function buildDailyShare(r, url) {
+  const youRow = r.history.map((h) => (h.you ? "🟩" : h.saved ? "🟦" : "🟥")).join("");
+  const aiRow = r.history.map((h) => (h.ai ? "🟩" : "🟥")).join("");
+  const legend = youRow.includes("🟦") ? "\n🟩 right · 🟥 wrong · 🟦 saved" : "";
+  const verdict = r.you > r.ai ? "I'm smarter than the AI! 🧠" : r.you === r.ai ? "Dead heat with the AI. 🤝" : "The AI won this one. 🤖";
+  return `🤖 Are You Smarter Than an AI?\n🗓️ Daily #${r.dailyNumber} — Banked ${r.main}\nMe ${r.you} 🆚 ${r.ai} AI · ${verdict}\nYou ${youRow}\nAI  ${aiRow}${legend}\n${url}`;
+}
+
 function fallbackCopy(text, done) {
   const ta = document.createElement("textarea");
   ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
