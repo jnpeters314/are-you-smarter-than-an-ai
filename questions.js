@@ -5,145 +5,180 @@
  *   subject : category label (shown on the card)
  *   grade   : 1-5, the grade level the question is "from"
  *   q       : the question text
- *   options : array of 4 answer choices
- *   answer  : index (0-3) of the correct choice
- *   aiTricky: true if this is the kind of thing AIs famously fumble.
- *             When true, the AI opponent has a high chance of getting it WRONG,
- *             giving the human a fighting chance. (This is the joke.)
+ *   options : array of 4 answer choices (order is randomized at play time)
+ *   answer  : index (0-3) of the correct choice IN THIS array
+ *   aiTricky: true if this is the kind of thing AIs famously fumble
+ *             (counting letters, simple logic traps, number comparisons).
+ *             When true, the AI opponent tends to get it WRONG — that's the joke.
+ *
+ * ~32 questions per grade, so a dozen+ games in a row won't repeat
+ * (a localStorage "recently seen" list in game.js enforces this).
  */
 const QUESTION_BANK = [
-  // ---------- GRADE 1 ----------
-  {
-    subject: "Math", grade: 1,
-    q: "What is 7 + 6?",
-    options: ["12", "13", "14", "11"], answer: 1
-  },
-  {
-    subject: "Spelling", grade: 1,
-    q: "How many letter R's are in the word \"strawberry\"?",
-    options: ["1", "2", "3", "4"], answer: 2, aiTricky: true
-  },
-  {
-    subject: "Animals", grade: 1,
-    q: "Which of these animals is a mammal?",
-    options: ["Shark", "Frog", "Dolphin", "Eagle"], answer: 2
-  },
-  {
-    subject: "Shapes", grade: 1,
-    q: "How many sides does a triangle have?",
-    options: ["2", "3", "4", "5"], answer: 1
-  },
-  {
-    subject: "Colors", grade: 1,
-    q: "Mixing blue and yellow paint makes what color?",
-    options: ["Purple", "Green", "Orange", "Brown"], answer: 1
-  },
+  // =================== GRADE 1 ===================
+  { subject: "Math", grade: 1, q: "What is 2 + 3?", options: ["4", "5", "6", "7"], answer: 1 },
+  { subject: "Math", grade: 1, q: "What is 10 − 4?", options: ["5", "6", "7", "8"], answer: 1 },
+  { subject: "Math", grade: 1, q: "What is 5 + 5?", options: ["8", "9", "10", "11"], answer: 2 },
+  { subject: "Math", grade: 1, q: "What is 3 + 3?", options: ["5", "6", "7", "9"], answer: 1 },
+  { subject: "Math", grade: 1, q: "Which number is bigger, 8 or 5?", options: ["8", "5", "They are equal", "Can't tell"], answer: 0 },
+  { subject: "Counting", grade: 1, q: "How many days are in a week?", options: ["5", "6", "7", "8"], answer: 2 },
+  { subject: "Counting", grade: 1, q: "How many months are in a year?", options: ["10", "11", "12", "13"], answer: 2 },
+  { subject: "Counting", grade: 1, q: "How many letters are in the English alphabet?", options: ["24", "25", "26", "27"], answer: 2 },
+  { subject: "Colors", grade: 1, q: "Mixing blue and yellow paint makes what color?", options: ["Purple", "Green", "Orange", "Brown"], answer: 1 },
+  { subject: "Colors", grade: 1, q: "Mixing red and white paint makes what color?", options: ["Orange", "Pink", "Gray", "Green"], answer: 1 },
+  { subject: "Colors", grade: 1, q: "What color is the sky on a clear day?", options: ["Green", "Blue", "Red", "Purple"], answer: 1 },
+  { subject: "Shapes", grade: 1, q: "How many sides does a triangle have?", options: ["2", "3", "4", "5"], answer: 1 },
+  { subject: "Shapes", grade: 1, q: "How many sides does a square have?", options: ["3", "4", "5", "6"], answer: 1 },
+  { subject: "Animals", grade: 1, q: "Which of these animals is a mammal?", options: ["Shark", "Frog", "Dolphin", "Eagle"], answer: 2 },
+  { subject: "Animals", grade: 1, q: "Which animal says \"moo\"?", options: ["Dog", "Cow", "Cat", "Duck"], answer: 1 },
+  { subject: "Animals", grade: 1, q: "What is a baby dog called?", options: ["Kitten", "Puppy", "Cub", "Foal"], answer: 1 },
+  { subject: "Animals", grade: 1, q: "How many legs does a spider have?", options: ["6", "8", "10", "4"], answer: 1 },
+  { subject: "Animals", grade: 1, q: "Which animal can fly?", options: ["Fish", "Bird", "Dog", "Snake"], answer: 1 },
+  { subject: "Nature", grade: 1, q: "What do bees make?", options: ["Milk", "Honey", "Silk", "Web"], answer: 1 },
+  { subject: "Nature", grade: 1, q: "What do we call water that is frozen solid?", options: ["Steam", "Ice", "Mud", "Foam"], answer: 1 },
+  { subject: "Body", grade: 1, q: "How many fingers are on one hand?", options: ["4", "5", "6", "10"], answer: 1 },
+  { subject: "Body", grade: 1, q: "What do you use to smell things?", options: ["Ears", "Nose", "Eyes", "Hands"], answer: 1 },
+  { subject: "Food", grade: 1, q: "Which of these is a fruit?", options: ["Carrot", "Apple", "Potato", "Onion"], answer: 1 },
+  { subject: "Food", grade: 1, q: "Which animal gives us milk?", options: ["Chicken", "Cow", "Sheep", "Bee"], answer: 1 },
+  { subject: "Food", grade: 1, q: "What color are bananas when ripe?", options: ["Red", "Yellow", "Blue", "Purple"], answer: 1 },
+  { subject: "Opposites", grade: 1, q: "What is the opposite of \"hot\"?", options: ["Warm", "Cold", "Wet", "Big"], answer: 1 },
+  { subject: "Opposites", grade: 1, q: "What is the opposite of \"up\"?", options: ["Left", "Down", "Over", "In"], answer: 1 },
+  { subject: "Time", grade: 1, q: "How many hours are in one day?", options: ["12", "24", "60", "7"], answer: 1 },
+  { subject: "Time", grade: 1, q: "Which day comes right after Monday?", options: ["Sunday", "Tuesday", "Friday", "Wednesday"], answer: 1 },
+  { subject: "Spelling", grade: 1, q: "How many letter E's are in the word \"cheese\"?", options: ["1", "2", "3", "4"], answer: 2, aiTricky: true },
+  { subject: "Spelling", grade: 1, q: "How many letters are in the word \"apple\"?", options: ["4", "5", "6", "7"], answer: 1 },
 
-  // ---------- GRADE 2 ----------
-  {
-    subject: "Math", grade: 2,
-    q: "Which number is bigger: 9.9 or 9.11?",
-    options: ["9.9", "9.11", "They are equal", "Cannot tell"], answer: 0, aiTricky: true
-  },
-  {
-    subject: "Science", grade: 2,
-    q: "What do plants breathe in that people breathe out?",
-    options: ["Oxygen", "Carbon dioxide", "Nitrogen", "Helium"], answer: 1
-  },
-  {
-    subject: "Money", grade: 2,
-    q: "How many quarters make one dollar?",
-    options: ["2", "3", "4", "5"], answer: 2
-  },
-  {
-    subject: "Geography", grade: 2,
-    q: "Which of these is an ocean?",
-    options: ["Sahara", "Pacific", "Everest", "Amazon"], answer: 1
-  },
-  {
-    subject: "Time", grade: 2,
-    q: "How many minutes are in one hour?",
-    options: ["30", "45", "60", "100"], answer: 2
-  },
+  // =================== GRADE 2 ===================
+  { subject: "Math", grade: 2, q: "What is 12 + 7?", options: ["18", "19", "20", "21"], answer: 1 },
+  { subject: "Math", grade: 2, q: "What is 15 − 8?", options: ["6", "7", "8", "9"], answer: 1 },
+  { subject: "Math", grade: 2, q: "What is 4 × 2?", options: ["6", "8", "10", "2"], answer: 1 },
+  { subject: "Math", grade: 2, q: "What is 9 + 8?", options: ["16", "17", "18", "19"], answer: 1 },
+  { subject: "Math", grade: 2, q: "What is half of 10?", options: ["2", "5", "10", "20"], answer: 1 },
+  { subject: "Math", grade: 2, q: "Which of these is an even number?", options: ["3", "7", "8", "9"], answer: 2 },
+  { subject: "Science", grade: 2, q: "What do plants need from the Sun to grow?", options: ["Light", "Ice", "Sound", "Plastic"], answer: 0 },
+  { subject: "Science", grade: 2, q: "What do we call baby frogs?", options: ["Cubs", "Tadpoles", "Kittens", "Chicks"], answer: 1 },
+  { subject: "Science", grade: 2, q: "What part of a plant is usually underground?", options: ["Leaves", "Roots", "Flower", "Stem"], answer: 1 },
+  { subject: "Science", grade: 2, q: "When water freezes, what does it become?", options: ["Steam", "Ice", "Cloud", "Rain"], answer: 1 },
+  { subject: "Geography", grade: 2, q: "Which of these is an ocean?", options: ["Sahara", "Pacific", "Everest", "Amazon"], answer: 1 },
+  { subject: "Geography", grade: 2, q: "What do we call a dry place with lots of sand and little water?", options: ["Jungle", "Desert", "Ocean", "Forest"], answer: 1 },
+  { subject: "Money", grade: 2, q: "How many quarters make one dollar?", options: ["2", "3", "4", "5"], answer: 2 },
+  { subject: "Money", grade: 2, q: "How many cents are in one dollar?", options: ["10", "50", "100", "1000"], answer: 2 },
+  { subject: "Time", grade: 2, q: "How many minutes are in one hour?", options: ["30", "45", "60", "100"], answer: 2 },
+  { subject: "Time", grade: 2, q: "How many seconds are in one minute?", options: ["30", "60", "100", "24"], answer: 1 },
+  { subject: "Space", grade: 2, q: "What is the name of the planet we live on?", options: ["Mars", "Earth", "Venus", "The Moon"], answer: 1 },
+  { subject: "Space", grade: 2, q: "What lights up the sky during the daytime?", options: ["The Moon", "The Sun", "Stars", "A lamp"], answer: 1 },
+  { subject: "Animals", grade: 2, q: "Which animal is known as \"man's best friend\"?", options: ["Cat", "Dog", "Horse", "Parrot"], answer: 1 },
+  { subject: "Animals", grade: 2, q: "Which animal has a very long neck?", options: ["Elephant", "Giraffe", "Zebra", "Lion"], answer: 1 },
+  { subject: "Animals", grade: 2, q: "Which of these animals lays eggs?", options: ["Cow", "Dog", "Chicken", "Cat"], answer: 2 },
+  { subject: "Body", grade: 2, q: "Which organ pumps blood around your body?", options: ["Lungs", "Heart", "Brain", "Liver"], answer: 1 },
+  { subject: "Body", grade: 2, q: "What do your lungs help you do?", options: ["See", "Breathe", "Walk", "Hear"], answer: 1 },
+  { subject: "Grammar", grade: 2, q: "Which of these words is a noun?", options: ["Run", "Quickly", "Dog", "Blue"], answer: 2 },
+  { subject: "Grammar", grade: 2, q: "What is the word for more than one \"cat\"?", options: ["Cat", "Cats", "Cat's", "Cdate"], answer: 1 },
+  { subject: "Colors", grade: 2, q: "Mixing red and blue paint makes what color?", options: ["Green", "Purple", "Orange", "Pink"], answer: 1 },
+  { subject: "Weather", grade: 2, q: "What tool do we use to measure temperature?", options: ["Ruler", "Thermometer", "Clock", "Scale"], answer: 1 },
+  { subject: "Weather", grade: 2, q: "What do we call soft white flakes that fall in winter?", options: ["Rain", "Snow", "Dew", "Steam"], answer: 1 },
+  { subject: "Food", grade: 2, q: "Which food comes from a chicken?", options: ["Milk", "Egg", "Cheese", "Honey"], answer: 1 },
+  { subject: "Logic", grade: 2, q: "There are 6 apples and you take away 4. How many apples do YOU have?", options: ["2", "4", "6", "10"], answer: 1, aiTricky: true },
+  { subject: "Logic", grade: 2, q: "Which is heavier: a pound of feathers or a pound of bricks?", options: ["Feathers", "Bricks", "They weigh the same", "Can't tell"], answer: 2, aiTricky: true },
 
-  // ---------- GRADE 3 ----------
-  {
-    subject: "Math", grade: 3,
-    q: "What is 8 × 7?",
-    options: ["54", "56", "63", "48"], answer: 1
-  },
-  {
-    subject: "Grammar", grade: 3,
-    q: "Which word is a verb?",
-    options: ["Quickly", "Happy", "Jump", "Blue"], answer: 2
-  },
-  {
-    subject: "Science", grade: 3,
-    q: "What is the closest planet to the Sun?",
-    options: ["Venus", "Earth", "Mercury", "Mars"], answer: 2
-  },
-  {
-    subject: "Logic", grade: 3,
-    q: "A farmer has 17 sheep. All but 9 run away. How many are left?",
-    options: ["8", "9", "17", "26"], answer: 1, aiTricky: true
-  },
-  {
-    subject: "Geography", grade: 3,
-    q: "How many continents are there on Earth?",
-    options: ["5", "6", "7", "8"], answer: 2
-  },
+  // =================== GRADE 3 ===================
+  { subject: "Math", grade: 3, q: "What is 8 × 7?", options: ["54", "56", "63", "48"], answer: 1 },
+  { subject: "Math", grade: 3, q: "What is 9 × 6?", options: ["54", "56", "45", "63"], answer: 0 },
+  { subject: "Math", grade: 3, q: "What is 45 ÷ 5?", options: ["8", "9", "10", "7"], answer: 1 },
+  { subject: "Math", grade: 3, q: "What is 100 − 37?", options: ["63", "67", "73", "57"], answer: 0 },
+  { subject: "Math", grade: 3, q: "What is 6 × 7?", options: ["42", "36", "48", "49"], answer: 0 },
+  { subject: "Math", grade: 3, q: "What is 12 × 3?", options: ["33", "36", "39", "24"], answer: 1 },
+  { subject: "Math", grade: 3, q: "Is 17 a prime number?", options: ["Yes", "No", "It's even", "Can't tell"], answer: 0 },
+  { subject: "Math", grade: 3, q: "Round 48 to the nearest ten.", options: ["40", "50", "45", "48"], answer: 1 },
+  { subject: "Math", grade: 3, q: "How many sides does a hexagon have?", options: ["5", "6", "7", "8"], answer: 1 },
+  { subject: "Science", grade: 3, q: "What is the closest planet to the Sun?", options: ["Venus", "Mercury", "Mars", "Earth"], answer: 1 },
+  { subject: "Science", grade: 3, q: "How many legs does an insect have?", options: ["4", "6", "8", "10"], answer: 1 },
+  { subject: "Science", grade: 3, q: "What gas do plants release that people need to breathe?", options: ["Oxygen", "Carbon dioxide", "Helium", "Nitrogen"], answer: 0 },
+  { subject: "Science", grade: 3, q: "What force pulls objects down toward the Earth?", options: ["Magnetism", "Gravity", "Friction", "Wind"], answer: 1 },
+  { subject: "Science", grade: 3, q: "What is H₂O more commonly known as?", options: ["Salt", "Water", "Air", "Gold"], answer: 1 },
+  { subject: "Science", grade: 3, q: "Which of these is NOT a state of matter?", options: ["Solid", "Liquid", "Gas", "Metal"], answer: 3 },
+  { subject: "Grammar", grade: 3, q: "Which of these words is a verb?", options: ["Happy", "Jump", "Slowly", "Red"], answer: 1 },
+  { subject: "Grammar", grade: 3, q: "In \"the tall tree,\" which word is an adjective?", options: ["The", "Tall", "Tree", "Is"], answer: 1 },
+  { subject: "Grammar", grade: 3, q: "What punctuation mark ends a question?", options: ["Period", "Comma", "Question mark", "Exclamation point"], answer: 2 },
+  { subject: "Geography", grade: 3, q: "How many continents are there on Earth?", options: ["5", "6", "7", "8"], answer: 2 },
+  { subject: "Geography", grade: 3, q: "What is the capital of the United States?", options: ["New York", "Washington, D.C.", "Los Angeles", "Chicago"], answer: 1 },
+  { subject: "Geography", grade: 3, q: "Which country is shaped like a boot?", options: ["Spain", "Italy", "France", "Greece"], answer: 1 },
+  { subject: "Geography", grade: 3, q: "Which of these is a river?", options: ["Nile", "Sahara", "Alps", "Pacific"], answer: 0 },
+  { subject: "Space", grade: 3, q: "How many planets are in our solar system?", options: ["7", "8", "9", "10"], answer: 1 },
+  { subject: "Space", grade: 3, q: "What do we call a space rock that lands on Earth?", options: ["Comet", "Asteroid", "Meteorite", "Satellite"], answer: 2 },
+  { subject: "History", grade: 3, q: "Who was the first President of the United States?", options: ["Abraham Lincoln", "George Washington", "Thomas Jefferson", "John Adams"], answer: 1 },
+  { subject: "History", grade: 3, q: "Which famous ship sank in 1912 after hitting an iceberg?", options: ["Titanic", "Mayflower", "Santa Maria", "Endeavour"], answer: 0 },
+  { subject: "Animals", grade: 3, q: "What do we call an animal that eats only plants?", options: ["Carnivore", "Herbivore", "Omnivore", "Predator"], answer: 1 },
+  { subject: "Animals", grade: 3, q: "Which is the largest land animal?", options: ["Elephant", "Giraffe", "Rhino", "Hippo"], answer: 0 },
+  { subject: "Body", grade: 3, q: "Which sense do you use your tongue for?", options: ["Smell", "Taste", "Touch", "Hearing"], answer: 1 },
+  { subject: "Logic", grade: 3, q: "A farmer has 17 sheep. All but 9 run away. How many are left?", options: ["8", "9", "17", "26"], answer: 1, aiTricky: true },
+  { subject: "Spelling", grade: 3, q: "How many letter R's are in the word \"strawberry\"?", options: ["1", "2", "3", "4"], answer: 2, aiTricky: true },
+  { subject: "Math", grade: 3, q: "Which number is bigger: 0.9 or 0.11?", options: ["0.9", "0.11", "They are equal", "Can't tell"], answer: 0, aiTricky: true },
 
-  // ---------- GRADE 4 ----------
-  {
-    subject: "Math", grade: 4,
-    q: "What is 1/2 + 1/4?",
-    options: ["2/6", "3/4", "1/6", "2/4"], answer: 1
-  },
-  {
-    subject: "History", grade: 4,
-    q: "Who was the first President of the United States?",
-    options: ["Thomas Jefferson", "Abraham Lincoln", "George Washington", "John Adams"], answer: 2
-  },
-  {
-    subject: "Science", grade: 4,
-    q: "What gas do humans need to breathe to live?",
-    options: ["Carbon dioxide", "Oxygen", "Hydrogen", "Methane"], answer: 1
-  },
-  {
-    subject: "Wordplay", grade: 4,
-    q: "What is the word \"racecar\" an example of?",
-    options: ["A synonym", "A palindrome", "An acronym", "A homophone"], answer: 1
-  },
-  {
-    subject: "Geography", grade: 4,
-    q: "What is the largest country in the world by land area?",
-    options: ["China", "USA", "Canada", "Russia"], answer: 3
-  },
+  // =================== GRADE 4 ===================
+  { subject: "Math", grade: 4, q: "What is 1/2 + 1/4?", options: ["2/6", "3/4", "1/6", "2/4"], answer: 1 },
+  { subject: "Math", grade: 4, q: "What is 12 × 12?", options: ["124", "132", "144", "154"], answer: 2 },
+  { subject: "Math", grade: 4, q: "What is 3² (3 squared)?", options: ["6", "9", "12", "3"], answer: 1 },
+  { subject: "Math", grade: 4, q: "What is 7 × 9?", options: ["56", "63", "72", "54"], answer: 1 },
+  { subject: "Math", grade: 4, q: "What is 144 ÷ 12?", options: ["10", "11", "12", "14"], answer: 2 },
+  { subject: "Math", grade: 4, q: "What is 25% of 80?", options: ["15", "20", "25", "40"], answer: 1 },
+  { subject: "Math", grade: 4, q: "How many degrees are in a right angle?", options: ["45", "90", "180", "360"], answer: 1 },
+  { subject: "Math", grade: 4, q: "What is the perimeter of a square with sides of 5?", options: ["10", "20", "25", "15"], answer: 1 },
+  { subject: "Math", grade: 4, q: "Is the number 29 prime or composite?", options: ["Prime", "Composite", "Even", "Neither"], answer: 0 },
+  { subject: "Science", grade: 4, q: "What gas do humans need to breathe to live?", options: ["Carbon dioxide", "Oxygen", "Hydrogen", "Methane"], answer: 1 },
+  { subject: "Science", grade: 4, q: "What is the powerhouse of the cell?", options: ["Nucleus", "Ribosome", "Mitochondria", "Membrane"], answer: 2 },
+  { subject: "Science", grade: 4, q: "What do we call animals that eat both plants and meat?", options: ["Herbivores", "Carnivores", "Omnivores", "Insectivores"], answer: 2 },
+  { subject: "Science", grade: 4, q: "How many bones are in the adult human body?", options: ["106", "206", "306", "406"], answer: 1 },
+  { subject: "Science", grade: 4, q: "What type of animal is a frog?", options: ["Reptile", "Amphibian", "Mammal", "Fish"], answer: 1 },
+  { subject: "Science", grade: 4, q: "What process do plants use to make food from sunlight?", options: ["Respiration", "Photosynthesis", "Digestion", "Evaporation"], answer: 1 },
+  { subject: "History", grade: 4, q: "Who was the main author of the Declaration of Independence?", options: ["George Washington", "Thomas Jefferson", "Benjamin Franklin", "John Adams"], answer: 1 },
+  { subject: "History", grade: 4, q: "In which country were the ancient Pyramids of Giza built?", options: ["Greece", "Egypt", "Italy", "Mexico"], answer: 1 },
+  { subject: "History", grade: 4, q: "Who is said to have discovered gravity after seeing an apple fall?", options: ["Albert Einstein", "Isaac Newton", "Galileo Galilei", "Charles Darwin"], answer: 1 },
+  { subject: "History", grade: 4, q: "The Great Wall is located in which country?", options: ["Japan", "China", "India", "South Korea"], answer: 1 },
+  { subject: "Geography", grade: 4, q: "What is the largest country in the world by land area?", options: ["China", "USA", "Canada", "Russia"], answer: 3 },
+  { subject: "Geography", grade: 4, q: "The Sahara Desert is on which continent?", options: ["Asia", "Africa", "Australia", "South America"], answer: 1 },
+  { subject: "Geography", grade: 4, q: "What imaginary line divides Earth into North and South halves?", options: ["The equator", "The prime meridian", "The horizon", "The axis"], answer: 0 },
+  { subject: "Geography", grade: 4, q: "Which U.S. state is the largest by area?", options: ["Texas", "California", "Alaska", "Montana"], answer: 2 },
+  { subject: "Space", grade: 4, q: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], answer: 1 },
+  { subject: "Space", grade: 4, q: "Which is the largest planet in our solar system?", options: ["Saturn", "Jupiter", "Neptune", "Earth"], answer: 1 },
+  { subject: "Grammar", grade: 4, q: "What is the past tense of the verb \"run\"?", options: ["Runned", "Ran", "Running", "Runs"], answer: 1 },
+  { subject: "Wordplay", grade: 4, q: "The word \"racecar\" is an example of a what?", options: ["Synonym", "Palindrome", "Acronym", "Homophone"], answer: 1 },
+  { subject: "Wordplay", grade: 4, q: "Which word is a synonym for \"happy\"?", options: ["Sad", "Joyful", "Angry", "Tired"], answer: 1 },
+  { subject: "Logic", grade: 4, q: "A bat and a ball cost $1.10 together. The bat costs $1.00 more than the ball. How much is the ball?", options: ["$0.10", "$0.05", "$1.00", "$0.15"], answer: 1, aiTricky: true },
+  { subject: "Logic", grade: 4, q: "Which weighs more: 1 kilogram of steel or 1 kilogram of cotton?", options: ["The steel", "The cotton", "They are equal", "The steel, slightly"], answer: 2, aiTricky: true },
+  { subject: "English", grade: 4, q: "How many words are in this exact sentence?", options: ["6", "7", "8", "9"], answer: 2, aiTricky: true },
 
-  // ---------- GRADE 5 ----------
-  {
-    subject: "Math", grade: 5,
-    q: "What is the value of π (pi) rounded to two decimal places?",
-    options: ["3.14", "3.16", "3.41", "2.14"], answer: 0
-  },
-  {
-    subject: "Science", grade: 5,
-    q: "What is the powerhouse of the cell?",
-    options: ["Nucleus", "Ribosome", "Mitochondria", "Membrane"], answer: 2
-  },
-  {
-    subject: "Logic", grade: 5,
-    q: "If a bat and a ball cost $1.10 total, and the bat costs $1.00 more than the ball, how much is the ball?",
-    options: ["$0.10", "$0.05", "$1.00", "$0.15"], answer: 1, aiTricky: true
-  },
-  {
-    subject: "History", grade: 5,
-    q: "In which year did World War II end?",
-    options: ["1918", "1939", "1945", "1950"], answer: 2
-  },
-  {
-    subject: "English", grade: 5,
-    q: "How many words are in the sentence you are reading right now?",
-    options: ["11", "12", "13", "14"], answer: 1, aiTricky: true
-  }
+  // =================== GRADE 5 ===================
+  { subject: "Math", grade: 5, q: "What is the value of π (pi) rounded to two decimal places?", options: ["3.14", "3.16", "3.41", "2.14"], answer: 0 },
+  { subject: "Math", grade: 5, q: "What is the square root of 144?", options: ["11", "12", "13", "14"], answer: 1 },
+  { subject: "Math", grade: 5, q: "What is 15% of 200?", options: ["15", "30", "45", "300"], answer: 1 },
+  { subject: "Math", grade: 5, q: "What is 8³ (8 cubed)?", options: ["256", "512", "64", "128"], answer: 1 },
+  { subject: "Math", grade: 5, q: "How many degrees do the interior angles of a triangle add up to?", options: ["90", "180", "270", "360"], answer: 1 },
+  { subject: "Math", grade: 5, q: "What is the least common multiple of 4 and 6?", options: ["10", "12", "24", "6"], answer: 1 },
+  { subject: "Math", grade: 5, q: "What is 1/5 written as a decimal?", options: ["0.15", "0.2", "0.5", "0.25"], answer: 1 },
+  { subject: "Math", grade: 5, q: "What is 7² + 1?", options: ["48", "49", "50", "15"], answer: 2 },
+  { subject: "Science", grade: 5, q: "What is the chemical symbol for gold?", options: ["Go", "Gd", "Au", "Ag"], answer: 2 },
+  { subject: "Science", grade: 5, q: "What is the chemical symbol for oxygen?", options: ["O", "Ox", "Og", "Oy"], answer: 0 },
+  { subject: "Science", grade: 5, q: "What is the hardest natural substance on Earth?", options: ["Gold", "Iron", "Diamond", "Quartz"], answer: 2 },
+  { subject: "Science", grade: 5, q: "How many chambers does the human heart have?", options: ["2", "3", "4", "5"], answer: 2 },
+  { subject: "Science", grade: 5, q: "What is the largest organ of the human body?", options: ["Heart", "Liver", "Skin", "Lungs"], answer: 2 },
+  { subject: "Science", grade: 5, q: "What is the boiling point of water at sea level in Celsius?", options: ["0°", "50°", "100°", "212°"], answer: 2 },
+  { subject: "Science", grade: 5, q: "In a cell, DNA is mostly found in the...?", options: ["Nucleus", "Membrane", "Cytoplasm", "Cell wall"], answer: 0 },
+  { subject: "Space", grade: 5, q: "Which planet has the most prominent rings?", options: ["Jupiter", "Saturn", "Uranus", "Neptune"], answer: 1 },
+  { subject: "Space", grade: 5, q: "Which planet is closest in size to Earth?", options: ["Mars", "Venus", "Mercury", "Neptune"], answer: 1 },
+  { subject: "Space", grade: 5, q: "About how long does sunlight take to reach Earth?", options: ["8 seconds", "8 minutes", "8 hours", "8 days"], answer: 1 },
+  { subject: "History", grade: 5, q: "In which year did World War II end?", options: ["1918", "1939", "1945", "1950"], answer: 2 },
+  { subject: "History", grade: 5, q: "Who was U.S. President during most of the Civil War?", options: ["George Washington", "Abraham Lincoln", "Franklin Roosevelt", "Ulysses S. Grant"], answer: 1 },
+  { subject: "History", grade: 5, q: "Who painted the Mona Lisa?", options: ["Michelangelo", "Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh"], answer: 1 },
+  { subject: "History", grade: 5, q: "Which ancient civilization built Machu Picchu?", options: ["Aztec", "Maya", "Inca", "Egyptian"], answer: 2 },
+  { subject: "History", grade: 5, q: "In which year was the Declaration of Independence signed?", options: ["1492", "1776", "1812", "1865"], answer: 1 },
+  { subject: "Geography", grade: 5, q: "What is the capital of France?", options: ["London", "Paris", "Rome", "Berlin"], answer: 1 },
+  { subject: "Geography", grade: 5, q: "What is the tallest mountain above sea level?", options: ["K2", "Mount Everest", "Kilimanjaro", "Denali"], answer: 1 },
+  { subject: "Geography", grade: 5, q: "The Amazon rainforest is mostly located in which country?", options: ["Peru", "Brazil", "Colombia", "Venezuela"], answer: 1 },
+  { subject: "Geography", grade: 5, q: "Which continent is the coldest and driest?", options: ["Australia", "Antarctica", "Africa", "Asia"], answer: 1 },
+  { subject: "English", grade: 5, q: "What do we call words that sound alike but differ in meaning, like \"to,\" \"two,\" and \"too\"?", options: ["Synonyms", "Antonyms", "Homophones", "Palindromes"], answer: 2 },
+  { subject: "English", grade: 5, q: "What do we call words with opposite meanings, like \"hot\" and \"cold\"?", options: ["Synonyms", "Antonyms", "Homonyms", "Acronyms"], answer: 1 },
+  { subject: "Spelling", grade: 5, q: "How many letter S's are in the word \"Mississippi\"?", options: ["3", "4", "5", "6"], answer: 1, aiTricky: true },
+  { subject: "Logic", grade: 5, q: "If 5 machines take 5 minutes to make 5 widgets, how long do 100 machines take to make 100 widgets?", options: ["5 minutes", "100 minutes", "20 minutes", "500 minutes"], answer: 0, aiTricky: true },
+  { subject: "Logic", grade: 5, q: "How many months of the year have at least 28 days?", options: ["1", "2", "11", "12"], answer: 3, aiTricky: true },
 ];

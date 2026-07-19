@@ -31,22 +31,61 @@ function newState() {
   };
 }
 
-// Assemble 11 questions following the grade ramp, no repeats.
+// Give every bank question a stable id so we can remember which ones
+// have been shown across games (localStorage).
+QUESTION_BANK.forEach((q, i) => (q.id = i));
+
+const SEEN_KEY = "aysta_seen_v1";
+function loadSeen() {
+  try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || []; }
+  catch (e) { return []; }
+}
+function saveSeen(list) {
+  // Keep the most recent ~2/3 of the bank so questions eventually recycle.
+  const cap = Math.floor(QUESTION_BANK.length * 0.66);
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-cap))); }
+  catch (e) { /* storage unavailable — no problem */ }
+}
+
+// Assemble 11 questions along the grade ramp. Prefer questions the player
+// hasn't seen recently, so a dozen+ games in a row won't repeat.
 function buildRound() {
   const byGrade = {};
   QUESTION_BANK.forEach((q) => {
     (byGrade[q.grade] = byGrade[q.grade] || []).push(q);
   });
-  Object.values(byGrade).forEach(shuffle);
-  const used = new Set();
+
+  const seen = loadSeen();          // ids, oldest first -> newest last
+  const recency = (q) => {
+    const i = seen.lastIndexOf(q.id);
+    return i === -1 ? -1 : i;        // -1 (never seen) sorts first
+  };
+
+  const usedThisRound = new Set();
   const round = [];
   GRADE_PLAN.forEach((g) => {
-    const pool = byGrade[g].filter((q) => !used.has(q));
-    const q = pool.length ? pool[0] : pick(byGrade[g]);
-    used.add(q);
-    round.push(q);
+    const pool = byGrade[g]
+      .filter((q) => !usedThisRound.has(q.id))
+      .sort((a, b) => recency(a) - recency(b) || Math.random() - 0.5);
+    const chosen = pool[0];
+    usedThisRound.add(chosen.id);
+    seen.push(chosen.id);
+    round.push(withShuffledOptions(chosen));
   });
+
+  saveSeen(seen);
   return round;
+}
+
+// Return a copy of the question with its answer choices shuffled,
+// so "Copy" and answer positions aren't predictable game to game.
+function withShuffledOptions(q) {
+  const order = shuffle(q.options.map((_, i) => i));
+  return {
+    ...q,
+    options: order.map((i) => q.options[i]),
+    answer: order.indexOf(q.answer),
+  };
 }
 
 function shuffle(a) {
@@ -130,10 +169,40 @@ function loadQuestion() {
     wrap.appendChild(b);
   });
 
-  // Reset AI + lifeline UI
-  setAi("🤖", "Question " + (state.idx + 1) + ". Let's see what you've got, human.");
+  // Reset AI + lifeline UI — fresh banter every question.
+  setAi("🤖", nextIntro());
   $("btn-next").classList.add("hidden");
   refreshLifelines();
+
+  // On small screens, slide the current rung into view.
+  const rung = $("rung-" + state.idx);
+  if (rung && innerWidth <= 760) rung.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+}
+
+// Rotating opening lines so the AI never says the same thing twice in a row.
+const INTROS = [
+  "Question {n}. Let's see what you've got, human.",
+  "Question {n}. I've already solved this. Have you?",
+  "Round {n}. Try not to embarrass yourself.",
+  "Question {n}. My circuits are ready. Are you?",
+  "Here's #{n}. I'm feeling confident. Should you be?",
+  "Question {n}. Fun fact: I read this in 0.0003 seconds.",
+  "Number {n}. Take your time. I already know the answer.",
+  "Question {n}. Let's find out who's really smarter.",
+  "Question {n}. No pressure… but there's a little pressure.",
+  "#{n}. I promise not to gloat. Much.",
+  "Question {n}. Beep boop — good luck, carbon-based friend.",
+  "Question {n}. This one looks easy. For me, anyway.",
+  "Round {n}. Show me what human intuition can do.",
+  "Question {n}. I've seen a million of these. Literally.",
+  "Number {n}. Deep breath. You've got this. Maybe.",
+];
+let lastIntro = -1;
+function nextIntro() {
+  let i;
+  do { i = Math.floor(Math.random() * INTROS.length); } while (i === lastIntro && INTROS.length > 1);
+  lastIntro = i;
+  return INTROS[i].replace("{n}", state.idx + 1);
 }
 
 function refreshLifelines() {
@@ -305,6 +374,18 @@ function endGame(won) {
     if (smarter) { sfx("correct"); confettiBurst(0.5); }
     else sfx("wrong");
   }
+
+  // Track and show the player's personal best.
+  const winnings = won ? LADDER[LADDER.length - 1] : state.banked;
+  let best = 0;
+  try { best = parseInt(localStorage.getItem("aysta_best") || "0", 10) || 0; } catch (e) {}
+  const isRecord = winnings > best;
+  if (isRecord) { best = winnings; try { localStorage.setItem("aysta_best", String(best)); } catch (e) {} }
+  const bestEl = $("end-best");
+  if (bestEl) bestEl.innerHTML = isRecord && winnings > 0
+    ? `🎉 New personal best: <b>${fmt(best)}</b>`
+    : `Personal best: <b>${fmt(best)}</b>`;
+
   show("screen-end");
 }
 

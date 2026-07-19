@@ -17,6 +17,9 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Snappy taps on touch devices — no 300ms delay, no accidental zoom. */
+button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
 body {
   min-height: 100vh;
   color: var(--text);
@@ -234,6 +237,8 @@ h1 {
 }
 .stat span { display: block; font-size: 1.6rem; font-weight: 800; color: var(--accent); }
 .stat small { color: var(--muted); }
+.end-best { color: var(--muted); margin: -8px 0 22px; font-size: 0.98rem; }
+.end-best b { color: var(--cyan); }
 
 /* ============ Modal ============ */
 .modal {
@@ -258,14 +263,38 @@ h1 {
 
 /* ============ Responsive ============ */
 @media (max-width: 760px) {
-  .game-grid { grid-template-columns: 1fr; }
+  .stage { padding: 12px 12px calc(8px + env(safe-area-inset-bottom)); }
+  .game-grid { grid-template-columns: 1fr; gap: 12px; }
   .ladder {
     flex-direction: row; overflow-x: auto; gap: 6px;
     padding-bottom: 6px; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
   }
-  .rung { flex: none; flex-direction: column; align-items: center; min-width: 74px; padding: 6px 8px; gap: 2px; }
-  .rung .lvl { display: none; }
+  .ladder::-webkit-scrollbar { height: 4px; }
+  .rung {
+    flex: none; flex-direction: column; align-items: center;
+    min-width: 66px; padding: 6px 8px; gap: 2px;
+    scroll-snap-align: center;
+  }
+  .rung .lvl { display: block; font-size: 0.68rem; }
+  .rung .amt { font-size: 0.82rem; }
   .rung.current { transform: scale(1.02); }
-  .options { grid-template-columns: 1fr; }
-  .play { min-height: auto; }
+
+  .play { min-height: auto; padding: 16px; border-radius: 16px; }
+  .question { font-size: 1.35rem; }
+  .options { grid-template-columns: 1fr; gap: 10px; margin: 16px 0; }
+  .opt { min-height: 56px; font-size: 1.08rem; padding: 14px 16px; }  /* comfy thumb targets */
+
+  .lifelines { gap: 8px; }
+  .lifeline { padding: 9px 4px; min-height: 62px; }
+  .lifeline small { font-size: 0.66rem; line-height: 1.15; }
+
+  .btn-next { align-self: stretch; text-align: center; }
+  .scoreline { width: 100%; margin-left: 0; order: 3; }
+}
+
+/* Very narrow phones: hide the tiny lifeline captions to avoid crowding. */
+@media (max-width: 380px) {
+  .lifeline small { display: none; }
+  .lifeline { min-height: 52px; }
 }
