@@ -218,4 +218,47 @@ const QUESTION_BANK = [
   { subject: "Pop Culture", grade: 5, q: "In the TV show \"Friends,\" what is the name of Ross's pet monkey?", options: ["Marcel", "George", "Coco", "Bubbles"], answer: 0 },
   { subject: "Pop Culture", grade: 5, q: "Which video-game series features a super-soldier named Master Chief?", options: ["Halo", "Call of Duty", "Gears of War", "Destiny"], answer: 0 },
   { subject: "Pop Culture", grade: 5, q: "What was Walt Disney's first feature-length animated film (1937)?", options: ["Snow White and the Seven Dwarfs", "Pinocchio", "Fantasia", "Cinderella"], answer: 0 },
+
+  // =================== U.S. STATE CAPITALS ===================
+  // Grade = difficulty (1 = capital is the famous/biggest city, 5 = classic trickies).
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Arizona?", options: ["Phoenix", "Tucson", "Flagstaff", "Mesa"], answer: 0 },
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Hawaii?", options: ["Honolulu", "Hilo", "Kailua", "Lihue"], answer: 0 },
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Colorado?", options: ["Denver", "Boulder", "Aspen", "Colorado Springs"], answer: 0 },
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Georgia?", options: ["Atlanta", "Savannah", "Augusta", "Macon"], answer: 0 },
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Massachusetts?", options: ["Boston", "Cambridge", "Worcester", "Salem"], answer: 0 },
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Indiana?", options: ["Indianapolis", "Fort Wayne", "Gary", "Bloomington"], answer: 0 },
+  { subject: "US Capitals", grade: 1, q: "What is the capital of Utah?", options: ["Salt Lake City", "Provo", "Ogden", "Park City"], answer: 0 },
+
+  { subject: "US Capitals", grade: 2, q: "What is the capital of Texas?", options: ["Austin", "Houston", "Dallas", "San Antonio"], answer: 0 },
+  { subject: "US Capitals", grade: 2, q: "What is the capital of California?", options: ["Sacramento", "Los Angeles", "San Francisco", "San Diego"], answer: 0 },
+  { subject: "US Capitals", grade: 2, q: "What is the capital of Ohio?", options: ["Columbus", "Cleveland", "Cincinnati", "Toledo"], answer: 0 },
+  { subject: "US Capitals", grade: 2, q: "What is the capital of Tennessee?", options: ["Nashville", "Memphis", "Knoxville", "Chattanooga"], answer: 0 },
+  { subject: "US Capitals", grade: 2, q: "What is the capital of Florida?", options: ["Tallahassee", "Miami", "Orlando", "Jacksonville"], answer: 0 },
+  { subject: "US Capitals", grade: 2, q: "What is the capital of Wisconsin?", options: ["Madison", "Milwaukee", "Green Bay", "Kenosha"], answer: 0 },
+
+  { subject: "US Capitals", grade: 3, q: "What is the capital of New York?", options: ["Albany", "New York City", "Buffalo", "Rochester"], answer: 0 },
+  { subject: "US Capitals", grade: 3, q: "What is the capital of Illinois?", options: ["Springfield", "Chicago", "Peoria", "Rockford"], answer: 0 },
+  { subject: "US Capitals", grade: 3, q: "What is the capital of Pennsylvania?", options: ["Harrisburg", "Philadelphia", "Pittsburgh", "Allentown"], answer: 0 },
+  { subject: "US Capitals", grade: 3, q: "What is the capital of Michigan?", options: ["Lansing", "Detroit", "Grand Rapids", "Ann Arbor"], answer: 0 },
+  { subject: "US Capitals", grade: 3, q: "What is the capital of Washington?", options: ["Olympia", "Seattle", "Spokane", "Tacoma"], answer: 0 },
+  { subject: "US Capitals", grade: 3, q: "What is the capital of Oregon?", options: ["Salem", "Portland", "Eugene", "Bend"], answer: 0 },
+  { subject: "US Capitals", grade: 3, q: "What is the capital of Minnesota?", options: ["St. Paul", "Minneapolis", "Duluth", "Rochester"], answer: 0 },
+
+  { subject: "US Capitals", grade: 4, q: "What is the capital of Kentucky?", options: ["Frankfort", "Louisville", "Lexington", "Bowling Green"], answer: 0 },
+  { subject: "US Capitals", grade: 4, q: "What is the capital of Missouri?", options: ["Jefferson City", "St. Louis", "Kansas City", "Springfield"], answer: 0 },
+  { subject: "US Capitals", grade: 4, q: "What is the capital of Nevada?", options: ["Carson City", "Las Vegas", "Reno", "Henderson"], answer: 0 },
+  { subject: "US Capitals", grade: 4, q: "What is the capital of Louisiana?", options: ["Baton Rouge", "New Orleans", "Shreveport", "Lafayette"], answer: 0 },
+  { subject: "US Capitals", grade: 4, q: "What is the capital of New Jersey?", options: ["Trenton", "Newark", "Jersey City", "Atlantic City"], answer: 0 },
+  { subject: "US Capitals", grade: 4, q: "What is the capital of Kansas?", options: ["Topeka", "Wichita", "Kansas City", "Overland Park"], answer: 0 },
+  { subject: "US Capitals", grade: 4, q: "What is the capital of Nebraska?", options: ["Lincoln", "Omaha", "Bellevue", "Grand Island"], answer: 0 },
+
+  { subject: "US Capitals", grade: 5, q: "What is the capital of Alaska?", options: ["Juneau", "Anchorage", "Fairbanks", "Nome"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of Maine?", options: ["Augusta", "Portland", "Bangor", "Lewiston"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of South Dakota?", options: ["Pierre", "Sioux Falls", "Rapid City", "Aberdeen"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of Vermont?", options: ["Montpelier", "Burlington", "Rutland", "Stowe"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of North Dakota?", options: ["Bismarck", "Fargo", "Grand Forks", "Minot"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of New Hampshire?", options: ["Concord", "Manchester", "Nashua", "Portsmouth"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of Delaware?", options: ["Dover", "Wilmington", "Newark", "Rehoboth Beach"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of Montana?", options: ["Helena", "Billings", "Missoula", "Bozeman"], answer: 0 },
+  { subject: "US Capitals", grade: 5, q: "What is the capital of West Virginia?", options: ["Charleston", "Huntington", "Morgantown", "Wheeling"], answer: 0 },
 ];

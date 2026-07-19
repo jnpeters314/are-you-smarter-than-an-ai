@@ -19,7 +19,7 @@ const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 /* ============================================================
    Categories
    ============================================================ */
-const CATEGORIES = ["Mixed", "Pop Culture", "Math", "Science & Nature", "History & Geography", "Words & Language", "Brain Teasers"];
+const CATEGORIES = ["Mixed", "Pop Culture", "US Capitals", "Math", "Science & Nature", "History & Geography", "Words & Language", "Brain Teasers"];
 const SUBJECT_CATEGORY = {
   Math: "Math", Counting: "Math", Shapes: "Math", Money: "Math", Time: "Math",
   Science: "Science & Nature", Space: "Science & Nature", Body: "Science & Nature",
@@ -28,7 +28,7 @@ const SUBJECT_CATEGORY = {
   History: "History & Geography", Geography: "History & Geography",
   Grammar: "Words & Language", Spelling: "Words & Language", English: "Words & Language",
   Wordplay: "Words & Language", Opposites: "Words & Language",
-  Logic: "Brain Teasers", "Pop Culture": "Pop Culture",
+  Logic: "Brain Teasers", "Pop Culture": "Pop Culture", "US Capitals": "US Capitals",
 };
 // The "tricky" questions ARE brain teasers, wherever they live.
 const catOf = (q) => (q.aiTricky ? "Brain Teasers" : SUBJECT_CATEGORY[q.subject] || "Mixed");
@@ -105,6 +105,60 @@ function decideAiPick(q) {
 }
 
 /* ============================================================
+   Daily Challenge — same 11 questions for everyone, per (UTC) day.
+   Built from a date-seeded RNG so it's fully deterministic.
+   ============================================================ */
+function dailySeedId() {
+  const d = new Date();
+  return d.getUTCFullYear() * 10000 + (d.getUTCMonth() + 1) * 100 + d.getUTCDate(); // e.g. 20260719
+}
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function buildDailyQuestions(seedId) {
+  const rng = mulberry32(seedId);
+  const rShuffle = (arr) => {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+  const byGrade = {};
+  QUESTION_BANK.forEach((q) => { (byGrade[q.grade] = byGrade[q.grade] || []).push(q); });
+  // Sort by id first for a stable base order, then seed-shuffle — identical everywhere.
+  Object.keys(byGrade).forEach((g) => { byGrade[g].sort((a, b) => a.id - b.id); rShuffle(byGrade[g]); });
+
+  const used = new Set();
+  return GRADE_PLAN.map((g) => {
+    const poolForGrade = byGrade[g];
+    let q = poolForGrade.find((x) => !used.has(x.id)) || poolForGrade[0];
+    used.add(q.id);
+    const order = rShuffle(q.options.map((_, i) => i));
+    return { ...q, options: order.map((i) => q.options[i]), answer: order.indexOf(q.answer) };
+  });
+}
+
+/* ----- Sound on/off (persisted) ----- */
+let muted = false;
+try { muted = localStorage.getItem("aysta_muted") === "1"; } catch (e) {}
+function toggleSound() {
+  muted = !muted;
+  try { localStorage.setItem("aysta_muted", muted ? "1" : "0"); } catch (e) {}
+  paintSoundButton();
+}
+function paintSoundButton() {
+  const b = $("btn-sound");
+  if (b) { b.textContent = muted ? "🔇" : "🔊"; b.title = muted ? "Sound off (click for sound)" : "Sound on (click to mute)"; }
+}
+
+/* ============================================================
    State
    ============================================================ */
 let state;
@@ -143,9 +197,30 @@ function startGame() {
   const category = $("sel-category").value;
   state = newState(chosenMode, category);
   document.body.classList.toggle("sudden", chosenMode === "sudden");
-  if (chosenMode === "classic") buildLadder();
+  if (chosenMode !== "sudden") buildLadder();
   show("screen-game");
   loadQuestion();
+}
+
+function startDaily() {
+  if (state && state.timerId) clearInterval(state.timerId);
+  state = newState("daily", "Mixed");
+  state.dailyQuestions = buildDailyQuestions(dailySeedId());
+  document.body.classList.remove("sudden");
+  buildLadder();
+  show("screen-game");
+  loadQuestion();
+}
+
+// Show whether today's Daily has already been completed.
+function updateDailyStatus() {
+  const el = $("daily-status");
+  if (!el) return;
+  let rec = null;
+  try { rec = JSON.parse(localStorage.getItem("aysta_daily_" + dailySeedId())); } catch (e) {}
+  el.innerHTML = rec
+    ? `✅ Today's done — you banked <b>${fmt(rec.winnings)}</b> (You ${rec.you} vs AI ${rec.ai}). Play again or share!`
+    : "One shared challenge a day — same questions for everyone.";
 }
 
 function buildLadder() {
@@ -161,7 +236,7 @@ function buildLadder() {
 }
 
 function paintLadder() {
-  if (state.mode !== "classic") return;
+  if (state.mode === "sudden") return;
   LADDER.forEach((_, i) => {
     const r = $("rung-" + i);
     r.classList.toggle("current", i === state.idx);
@@ -182,15 +257,17 @@ function targetGrade() {
    Question rendering
    ============================================================ */
 function loadQuestion() {
-  const q = drawQuestion(targetGrade(), state.category);
+  const q = state.mode === "daily"
+    ? state.dailyQuestions[state.idx]
+    : drawQuestion(targetGrade(), state.category);
   state.q = q;
   state.answered = false;
   state.aiPick = decideAiPick(q);
 
-  const total = state.mode === "classic" ? LADDER.length : null;
-  $("qnum").textContent = state.mode === "classic"
-    ? `Question ${state.idx + 1} of ${total}`
-    : `Round ${state.idx + 1} — survive!`;
+  $("qnum").textContent =
+    state.mode === "sudden" ? `Round ${state.idx + 1} — survive!` :
+    state.mode === "daily"  ? `🗓️ Daily Challenge · Question ${state.idx + 1} of ${LADDER.length}` :
+                              `Question ${state.idx + 1} of ${LADDER.length}`;
   $("badge-subject").textContent = q.subject;
   $("badge-grade").textContent = "Grade " + q.grade;
   $("question").textContent = q.q;
@@ -357,7 +434,7 @@ function tagAiPick() {
 }
 
 function updateBanked() {
-  if (state.mode !== "classic") return;
+  if (state.mode === "sudden") return;
   for (let m = MILESTONES.length - 1; m >= 0; m--) {
     if (state.idx >= MILESTONES[m]) { state.banked = LADDER[MILESTONES[m]]; break; }
   }
@@ -443,13 +520,14 @@ function endGame(won, reason) {
   document.body.classList.remove("sudden");
   const smarter = state.youCorrect > state.aiCorrect;
 
-  if (state.mode === "classic") {
+  if (state.mode !== "sudden") {
+    const isDaily = state.mode === "daily";
     const winnings = won ? LADDER[LADDER.length - 1] : state.banked;
     $("end-stat-main").textContent = fmt(winnings);
     $("end-stat-label").textContent = "Banked";
     if (won) {
       $("end-emoji").textContent = "🏆";
-      $("end-title").textContent = "You Beat the Machine!";
+      $("end-title").textContent = isDaily ? "Daily Challenge Complete!" : "You Beat the Machine!";
       $("end-msg").innerHTML = `You climbed all the way to <b>${fmt(winnings)}</b>. ` +
         (smarter ? "And you out-answered the AI. You really <i>are</i> smarter than an AI!"
                  : "The AI kept pace — but the top of the ladder is yours.");
@@ -461,8 +539,17 @@ function endGame(won, reason) {
         (smarter ? "You still out-scored the AI up to that point — respectable!" : "The AI edged you out. Run it back?");
       if (smarter) { sfx("correct"); confettiBurst(0.5); } else sfx("wrong");
     }
-    updateBest("aysta_best", winnings, fmt);
-    lastResult = { mode: "Classic", won, main: fmt(winnings), you: state.youCorrect, ai: state.aiCorrect };
+    if (isDaily) {
+      try {
+        localStorage.setItem("aysta_daily_" + dailySeedId(),
+          JSON.stringify({ winnings, you: state.youCorrect, ai: state.aiCorrect, won }));
+      } catch (e) {}
+      updateDailyStatus();
+      $("end-best").innerHTML = "🗓️ Same challenge for everyone today — come back tomorrow for a new one!";
+    } else {
+      updateBest("aysta_best", winnings, fmt);
+    }
+    lastResult = { mode: isDaily ? "Daily Challenge" : "Classic", won, main: fmt(winnings), you: state.youCorrect, ai: state.aiCorrect };
   } else {
     // ---- Sudden death ----
     $("end-stat-main").textContent = state.streak;
@@ -524,6 +611,7 @@ function fallbackCopy(text, done) {
    ============================================================ */
 let actx;
 function sfx(type) {
+  if (muted) return;
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
     const now = actx.currentTime;
@@ -601,12 +689,17 @@ function wire() {
   );
 
   $("btn-start").addEventListener("click", startGame);
-  $("btn-again").addEventListener("click", () => show("screen-start"));
+  $("btn-daily").addEventListener("click", startDaily);
+  $("btn-again").addEventListener("click", () => { updateDailyStatus(); show("screen-start"); });
   $("btn-share").addEventListener("click", shareResult);
   $("btn-next").addEventListener("click", nextQuestion);
+  $("btn-sound").addEventListener("click", toggleSound);
   $("btn-how").addEventListener("click", () => $("modal").classList.remove("hidden"));
   $("btn-close-modal").addEventListener("click", () => $("modal").classList.add("hidden"));
   $("modal").addEventListener("click", (e) => { if (e.target.id === "modal") $("modal").classList.add("hidden"); });
+
+  paintSoundButton();
+  updateDailyStatus();
 
   document.querySelectorAll(".lifeline").forEach((btn) =>
     btn.addEventListener("click", () => useLifeline(btn.dataset.life))
