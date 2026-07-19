@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Are You Smarter Than an AI?</title>
+  <meta name="description" content="A trivia game show where you go head-to-head against an AI on grade-school questions. Can you beat the machine?" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+</head>
+<body>
+  <canvas id="confetti"></canvas>
+
+  <main class="stage">
+
+    <!-- ============ START SCREEN ============ -->
+    <section id="screen-start" class="screen active">
+      <div class="start-card">
+        <div class="title-robot">🤖</div>
+        <h1>Are You <span class="glow">Smarter</span><br />Than an AI?</h1>
+        <p class="tagline">Answer grade-school questions. Beat the machine. Climb to&nbsp;$1,000,000.</p>
+
+        <div class="rules">
+          <div class="rule"><span class="rule-ico">🎯</span> 11 questions, Grades 1&ndash;5, getting harder as you climb.</div>
+          <div class="rule"><span class="rule-ico">🧠</span> The AI answers too &mdash; but it fumbles the silly stuff.</div>
+          <div class="rule"><span class="rule-ico">💡</span> 3 lifelines: <b>Peek</b>, <b>Copy</b>, and <b>Save</b>.</div>
+        </div>
+
+        <button id="btn-start" class="btn btn-big">Start Game</button>
+        <button id="btn-how" class="btn btn-ghost">How lifelines work</button>
+      </div>
+    </section>
+
+    <!-- ============ GAME SCREEN ============ -->
+    <section id="screen-game" class="screen">
+      <div class="game-grid">
+
+        <!-- Money ladder -->
+        <aside class="ladder" id="ladder"></aside>
+
+        <!-- Main play area -->
+        <div class="play">
+          <header class="play-top">
+            <div class="badge" id="badge-subject">Math</div>
+            <div class="badge badge-grade" id="badge-grade">Grade 1</div>
+            <div class="scoreline">You <b id="score-you">0</b> &middot; <b id="score-ai">0</b> AI</div>
+          </header>
+
+          <div class="question-wrap">
+            <p class="qnum" id="qnum">Question 1 of 11</p>
+            <h2 class="question" id="question">Loading…</h2>
+          </div>
+
+          <div class="options" id="options"></div>
+
+          <!-- AI opponent -->
+          <div class="ai-panel" id="ai-panel">
+            <div class="ai-face" id="ai-face">🤖</div>
+            <div class="ai-speech" id="ai-speech">I'm ready when you are, human.</div>
+          </div>
+
+          <!-- Lifelines -->
+          <div class="lifelines" id="lifelines">
+            <button class="lifeline" data-life="peek" id="life-peek">
+              <span class="ll-ico">👀</span><span>Peek</span>
+              <small>See the AI's answer</small>
+            </button>
+            <button class="lifeline" data-life="copy" id="life-copy">
+              <span class="ll-ico">📋</span><span>Copy</span>
+              <small>Lock in the AI's pick</small>
+            </button>
+            <button class="lifeline" data-life="save" id="life-save">
+              <span class="ll-ico">🛟</span><span>Save</span>
+              <small>Survive one wrong answer</small>
+            </button>
+          </div>
+
+          <button id="btn-next" class="btn btn-next hidden">Next Question →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ END SCREEN ============ -->
+    <section id="screen-end" class="screen">
+      <div class="end-card">
+        <div class="end-emoji" id="end-emoji">🏆</div>
+        <h1 id="end-title">You Win!</h1>
+        <p id="end-msg" class="end-msg"></p>
+        <div class="end-stats">
+          <div class="stat"><span id="end-winnings">$0</span><small>Banked</small></div>
+          <div class="stat"><span id="end-you">0</span><small>You correct</small></div>
+          <div class="stat"><span id="end-ai">0</span><small>AI correct</small></div>
+        </div>
+        <button id="btn-again" class="btn btn-big">Play Again</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- How-to modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <h3>Lifelines</h3>
+      <ul>
+        <li><b>👀 Peek</b> — reveal which answer the AI thinks is right, then decide for yourself.</li>
+        <li><b>📋 Copy</b> — instantly lock in whatever the AI picked. Risky when the AI is being silly!</li>
+        <li><b>🛟 Save</b> — if you answer wrong, this shields you once and lets you keep climbing.</li>
+      </ul>
+      <p class="modal-tip">Each lifeline can be used <b>once per game</b>. Choose wisely.</p>
+      <button id="btn-close-modal" class="btn">Got it</button>
+    </div>
+  </div>
+
+  <footer class="credits">Built for fun · <a href="https://github.com/jnpeters314" target="_blank" rel="noopener">source on GitHub</a></footer>
+
+  <script src="questions.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
