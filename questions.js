@@ -181,4 +181,41 @@ const QUESTION_BANK = [
   { subject: "Spelling", grade: 5, q: "How many letter S's are in the word \"Mississippi\"?", options: ["3", "4", "5", "6"], answer: 1, aiTricky: true },
   { subject: "Logic", grade: 5, q: "If 5 machines take 5 minutes to make 5 widgets, how long do 100 machines take to make 100 widgets?", options: ["5 minutes", "100 minutes", "20 minutes", "500 minutes"], answer: 0, aiTricky: true },
   { subject: "Logic", grade: 5, q: "How many months of the year have at least 28 days?", options: ["1", "2", "11", "12"], answer: 3, aiTricky: true },
+
+  // =================== POP CULTURE ===================
+  // Grade = rough difficulty (1 = easy/kids, 5 = tougher trivia).
+  { subject: "Pop Culture", grade: 1, q: "What color is the video-game plumber Mario's hat?", options: ["Red", "Blue", "Green", "Yellow"], answer: 0 },
+  { subject: "Pop Culture", grade: 1, q: "In Disney's \"Frozen,\" what is the snowman's name?", options: ["Olaf", "Sven", "Kristoff", "Hans"], answer: 0 },
+  { subject: "Pop Culture", grade: 1, q: "In \"Finding Nemo,\" what type of animal is Nemo?", options: ["Fish", "Dog", "Turtle", "Crab"], answer: 0 },
+  { subject: "Pop Culture", grade: 1, q: "What kind of animal is the Disney character Mickey Mouse?", options: ["Mouse", "Cat", "Dog", "Duck"], answer: 0 },
+  { subject: "Pop Culture", grade: 1, q: "In \"Toy Story,\" what is the name of the cowboy toy?", options: ["Woody", "Buzz", "Rex", "Hamm"], answer: 0 },
+  { subject: "Pop Culture", grade: 1, q: "Which superhero shoots webs and is called the \"web-slinger\"?", options: ["Spider-Man", "Batman", "Hulk", "Thor"], answer: 0 },
+  { subject: "Pop Culture", grade: 1, q: "What color is the cartoon character SpongeBob SquarePants?", options: ["Yellow", "Green", "Blue", "Pink"], answer: 0 },
+
+  { subject: "Pop Culture", grade: 2, q: "What is the name of the wizarding school in \"Harry Potter\"?", options: ["Hogwarts", "Narnia", "Neverland", "Camelot"], answer: 0 },
+  { subject: "Pop Culture", grade: 2, q: "In Pokémon, which yellow Pokémon is an electric mouse?", options: ["Pikachu", "Charizard", "Bulbasaur", "Squirtle"], answer: 0 },
+  { subject: "Pop Culture", grade: 2, q: "Which Disney movie features a lion cub named Simba?", options: ["The Lion King", "Madagascar", "Zootopia", "Bambi"], answer: 0 },
+  { subject: "Pop Culture", grade: 2, q: "What is the name of Batman's home city?", options: ["Gotham City", "Metropolis", "Star City", "Central City"], answer: 0 },
+  { subject: "Pop Culture", grade: 2, q: "In \"Star Wars,\" what is the name of the small green Jedi Master?", options: ["Yoda", "Chewbacca", "R2-D2", "Obi-Wan"], answer: 0 },
+  { subject: "Pop Culture", grade: 2, q: "In \"Frozen,\" which sister has icy powers?", options: ["Elsa", "Anna", "Moana", "Aurora"], answer: 0 },
+
+  { subject: "Pop Culture", grade: 3, q: "Which company created the Mario and Zelda video games?", options: ["Nintendo", "Sony", "Microsoft", "Sega"], answer: 0 },
+  { subject: "Pop Culture", grade: 3, q: "What is the name of Harry Potter's pet owl?", options: ["Hedwig", "Errol", "Crookshanks", "Scabbers"], answer: 0 },
+  { subject: "Pop Culture", grade: 3, q: "In the Marvel films, what fictional metal is Captain America's shield made of?", options: ["Vibranium", "Adamantium", "Titanium", "Kryptonite"], answer: 0 },
+  { subject: "Pop Culture", grade: 3, q: "Which band recorded the songs \"Hey Jude\" and \"Let It Be\"?", options: ["The Beatles", "The Rolling Stones", "Queen", "U2"], answer: 0 },
+  { subject: "Pop Culture", grade: 3, q: "Which blocky building game is the best-selling video game of all time?", options: ["Minecraft", "Tetris", "Fortnite", "Roblox"], answer: 0 },
+  { subject: "Pop Culture", grade: 3, q: "In \"Star Wars,\" who is revealed to be Luke Skywalker's father?", options: ["Darth Vader", "Han Solo", "Obi-Wan", "Emperor Palpatine"], answer: 0 },
+
+  { subject: "Pop Culture", grade: 4, q: "Who directed the movies \"Jaws,\" \"E.T.,\" and \"Jurassic Park\"?", options: ["Steven Spielberg", "George Lucas", "James Cameron", "Christopher Nolan"], answer: 0 },
+  { subject: "Pop Culture", grade: 4, q: "Which pop star released the album \"1989\" and the song \"Shake It Off\"?", options: ["Taylor Swift", "Beyoncé", "Adele", "Katy Perry"], answer: 0 },
+  { subject: "Pop Culture", grade: 4, q: "What is the name of the fictional African nation in \"Black Panther\"?", options: ["Wakanda", "Zamunda", "Genovia", "Sokovia"], answer: 0 },
+  { subject: "Pop Culture", grade: 4, q: "In \"The Wizard of Oz\" film, what does Dorothy click together to go home?", options: ["Ruby slippers", "Glass slippers", "Silver boots", "Golden sandals"], answer: 0 },
+  { subject: "Pop Culture", grade: 4, q: "Which superhero team includes Iron Man, Thor, and the Hulk?", options: ["The Avengers", "Justice League", "X-Men", "The Fantastic Four"], answer: 0 },
+  { subject: "Pop Culture", grade: 4, q: "Which streaming series features a girl named Eleven and the \"Upside Down\"?", options: ["Stranger Things", "Dark", "The OA", "Wednesday"], answer: 0 },
+
+  { subject: "Pop Culture", grade: 5, q: "Which 2009 film was the first to gross over $2 billion worldwide?", options: ["Avatar", "Titanic", "Avengers: Endgame", "Star Wars"], answer: 0 },
+  { subject: "Pop Culture", grade: 5, q: "Who composed the iconic scores for \"Star Wars,\" \"Jaws,\" and \"Indiana Jones\"?", options: ["John Williams", "Hans Zimmer", "Ennio Morricone", "Danny Elfman"], answer: 0 },
+  { subject: "Pop Culture", grade: 5, q: "In the TV show \"Friends,\" what is the name of Ross's pet monkey?", options: ["Marcel", "George", "Coco", "Bubbles"], answer: 0 },
+  { subject: "Pop Culture", grade: 5, q: "Which video-game series features a super-soldier named Master Chief?", options: ["Halo", "Call of Duty", "Gears of War", "Destiny"], answer: 0 },
+  { subject: "Pop Culture", grade: 5, q: "What was Walt Disney's first feature-length animated film (1937)?", options: ["Snow White and the Seven Dwarfs", "Pinocchio", "Fantasia", "Cinderella"], answer: 0 },
 ];

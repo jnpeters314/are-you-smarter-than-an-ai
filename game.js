@@ -2,37 +2,41 @@
    Are You Smarter Than an AI?  —  game logic
    ============================================================ */
 
-// ----- Money ladder (11 rungs) -----
+// ----- Money ladder (Classic mode) -----
 const LADDER = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
-// Safe havens: reaching these banks the money even if you later miss.
-const MILESTONES = [4, 9]; // indices into LADDER  ($10,000 and $500,000)
-// Difficulty ramp: which grade each of the 11 questions comes from.
-const GRADE_PLAN = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5];
+const MILESTONES = [4, 9];                     // safe havens: $10,000 and $500,000
+const GRADE_PLAN = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5]; // base difficulty ramp per rung
+
+// ----- Timers (seconds) -----
+const TIME_CLASSIC = 20;
+const TIME_SUDDEN = 15;
 
 const fmt = (n) => "$" + n.toLocaleString("en-US");
 const $ = (id) => document.getElementById(id);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
-// ----- Game state -----
-let state;
+/* ============================================================
+   Categories
+   ============================================================ */
+const CATEGORIES = ["Mixed", "Pop Culture", "Math", "Science & Nature", "History & Geography", "Words & Language", "Brain Teasers"];
+const SUBJECT_CATEGORY = {
+  Math: "Math", Counting: "Math", Shapes: "Math", Money: "Math", Time: "Math",
+  Science: "Science & Nature", Space: "Science & Nature", Body: "Science & Nature",
+  Nature: "Science & Nature", Animals: "Science & Nature", Weather: "Science & Nature",
+  Colors: "Science & Nature", Food: "Science & Nature",
+  History: "History & Geography", Geography: "History & Geography",
+  Grammar: "Words & Language", Spelling: "Words & Language", English: "Words & Language",
+  Wordplay: "Words & Language", Opposites: "Words & Language",
+  Logic: "Brain Teasers", "Pop Culture": "Pop Culture",
+};
+// The "tricky" questions ARE brain teasers, wherever they live.
+const catOf = (q) => (q.aiTricky ? "Brain Teasers" : SUBJECT_CATEGORY[q.subject] || "Mixed");
+const inCategory = (q, cat) => cat === "Mixed" || catOf(q) === cat;
 
-function newState() {
-  return {
-    questions: buildRound(),
-    idx: 0,
-    youCorrect: 0,
-    aiCorrect: 0,
-    banked: 0,
-    answered: false,
-    aiPick: null,        // AI's chosen option index for current question
-    peeked: false,
-    lifelines: { peek: true, copy: true, save: true }, // true = available
-    saveArmed: false,
-  };
-}
-
-// Give every bank question a stable id so we can remember which ones
-// have been shown across games (localStorage).
+/* ============================================================
+   Question bank prep + "recently seen" memory
+   ============================================================ */
 QUESTION_BANK.forEach((q, i) => (q.id = i));
 
 const SEEN_KEY = "aysta_seen_v1";
@@ -41,51 +45,45 @@ function loadSeen() {
   catch (e) { return []; }
 }
 function saveSeen(list) {
-  // Keep the most recent ~2/3 of the bank so questions eventually recycle.
   const cap = Math.floor(QUESTION_BANK.length * 0.66);
   try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-cap))); }
-  catch (e) { /* storage unavailable — no problem */ }
+  catch (e) {}
 }
 
-// Assemble 11 questions along the grade ramp. Prefer questions the player
-// hasn't seen recently, so a dozen+ games in a row won't repeat.
-function buildRound() {
-  const byGrade = {};
-  QUESTION_BANK.forEach((q) => {
-    (byGrade[q.grade] = byGrade[q.grade] || []).push(q);
-  });
+// Draw one fresh question: preferred grade + category, least-recently-seen,
+// not used yet this game. Falls back to the nearest grade, then anywhere.
+function drawQuestion(targetGrade, category) {
+  const seen = loadSeen();
+  const rank = (q) => { const i = seen.lastIndexOf(q.id); return i === -1 ? -1 : i; };
+  const pool = QUESTION_BANK.filter((q) => inCategory(q, category));
+  const gradesByCloseness = [1, 2, 3, 4, 5].sort(
+    (a, b) => Math.abs(a - targetGrade) - Math.abs(b - targetGrade) || a - b
+  );
 
-  const seen = loadSeen();          // ids, oldest first -> newest last
-  const recency = (q) => {
-    const i = seen.lastIndexOf(q.id);
-    return i === -1 ? -1 : i;        // -1 (never seen) sorts first
-  };
+  for (const g of gradesByCloseness) {
+    const cand = pool.filter((q) => q.grade === g && !state.usedIds.has(q.id));
+    if (cand.length) {
+      cand.sort((a, b) => rank(a) - rank(b) || Math.random() - 0.5);
+      return commitDraw(cand[0], seen);
+    }
+  }
+  // Every question in this category has been used this game — allow reuse.
+  const leftover = pool.filter((q) => !state.usedIds.has(q.id));
+  const chosen = leftover.length ? pick(leftover) : pick(pool.length ? pool : QUESTION_BANK);
+  return commitDraw(chosen, seen);
+}
 
-  const usedThisRound = new Set();
-  const round = [];
-  GRADE_PLAN.forEach((g) => {
-    const pool = byGrade[g]
-      .filter((q) => !usedThisRound.has(q.id))
-      .sort((a, b) => recency(a) - recency(b) || Math.random() - 0.5);
-    const chosen = pool[0];
-    usedThisRound.add(chosen.id);
-    seen.push(chosen.id);
-    round.push(withShuffledOptions(chosen));
-  });
-
+function commitDraw(q, seen) {
+  state.usedIds.add(q.id);
+  seen.push(q.id);
   saveSeen(seen);
-  return round;
+  return withShuffledOptions(q);
 }
 
-// Return a copy of the question with its answer choices shuffled,
-// so "Copy" and answer positions aren't predictable game to game.
+// Copy the question with its answer choices shuffled.
 function withShuffledOptions(q) {
   const order = shuffle(q.options.map((_, i) => i));
-  return {
-    ...q,
-    options: order.map((i) => q.options[i]),
-    answer: order.indexOf(q.answer),
-  };
+  return { ...q, options: order.map((i) => q.options[i]), answer: order.indexOf(q.answer) };
 }
 
 function shuffle(a) {
@@ -96,7 +94,7 @@ function shuffle(a) {
   return a;
 }
 
-// Decide what the AI answers. It's smart... except on the silly stuff.
+// The AI is brilliant... except on the silly stuff (that's the joke).
 function decideAiPick(q) {
   const wrongChance = q.aiTricky ? 0.85 : 0.08;
   if (Math.random() < wrongChance) {
@@ -107,16 +105,45 @@ function decideAiPick(q) {
 }
 
 /* ============================================================
-   Screen flow
+   State
+   ============================================================ */
+let state;
+
+function newState(mode, category) {
+  return {
+    mode, category,
+    idx: 0,
+    youCorrect: 0,
+    aiCorrect: 0,
+    streak: 0,          // sudden-death survival counter
+    banked: 0,
+    adapt: 0,           // adaptive-difficulty offset, grows with performance
+    usedIds: new Set(),
+    q: null,
+    aiPick: null,
+    answered: false,
+    lifelines: { peek: true, copy: true, save: true },
+    saveArmed: false,
+    timerId: null,
+    timeLeft: 0,
+  };
+}
+
+/* ============================================================
+   Screen flow + setup
    ============================================================ */
 function show(screenId) {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   $(screenId).classList.add("active");
 }
 
+let chosenMode = "classic";
 function startGame() {
-  state = newState();
-  buildLadder();
+  if (state && state.timerId) clearInterval(state.timerId); // don't leak a prior timer
+  const category = $("sel-category").value;
+  state = newState(chosenMode, category);
+  document.body.classList.toggle("sudden", chosenMode === "sudden");
+  if (chosenMode === "classic") buildLadder();
   show("screen-game");
   loadQuestion();
 }
@@ -134,6 +161,7 @@ function buildLadder() {
 }
 
 function paintLadder() {
+  if (state.mode !== "classic") return;
   LADDER.forEach((_, i) => {
     const r = $("rung-" + i);
     r.classList.toggle("current", i === state.idx);
@@ -141,45 +169,62 @@ function paintLadder() {
   });
 }
 
+// Difficulty for the upcoming question.
+function targetGrade() {
+  if (state.mode === "classic") {
+    return clamp(Math.round(GRADE_PLAN[state.idx] + state.adapt), 1, 5);
+  }
+  // Sudden death: ramp with survival streak.
+  return clamp(1 + Math.floor(state.streak / 2) + Math.round(state.adapt), 1, 5);
+}
+
 /* ============================================================
    Question rendering
    ============================================================ */
 function loadQuestion() {
-  const q = state.questions[state.idx];
+  const q = drawQuestion(targetGrade(), state.category);
+  state.q = q;
   state.answered = false;
-  state.peeked = false;
   state.aiPick = decideAiPick(q);
 
-  $("qnum").textContent = `Question ${state.idx + 1} of ${LADDER.length}`;
+  const total = state.mode === "classic" ? LADDER.length : null;
+  $("qnum").textContent = state.mode === "classic"
+    ? `Question ${state.idx + 1} of ${total}`
+    : `Round ${state.idx + 1} — survive!`;
   $("badge-subject").textContent = q.subject;
   $("badge-grade").textContent = "Grade " + q.grade;
   $("question").textContent = q.q;
-  $("score-you").textContent = state.youCorrect;
-  $("score-ai").textContent = state.aiCorrect;
+  updateScoreline();
   paintLadder();
 
-  // Options
   const wrap = $("options");
   wrap.innerHTML = "";
   q.options.forEach((text, i) => {
     const b = document.createElement("button");
     b.className = "opt";
     b.innerHTML = `<span class="key">${"ABCD"[i]}</span><span>${text}</span>`;
-    b.addEventListener("click", () => choose(i));
+    b.addEventListener("click", () => resolveAnswer(i));
     wrap.appendChild(b);
   });
 
-  // Reset AI + lifeline UI — fresh banter every question.
   setAi("🤖", nextIntro());
   $("btn-next").classList.add("hidden");
   refreshLifelines();
+  startTimer();
 
-  // On small screens, slide the current rung into view.
   const rung = $("rung-" + state.idx);
   if (rung && innerWidth <= 760) rung.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
 }
 
-// Rotating opening lines so the AI never says the same thing twice in a row.
+function updateScoreline() {
+  if (state.mode === "sudden") {
+    $("scoreline").innerHTML = `🔥 Streak <b>${state.streak}</b> &middot; You <b>${state.youCorrect}</b> / AI <b>${state.aiCorrect}</b>`;
+  } else {
+    $("scoreline").innerHTML = `You <b>${state.youCorrect}</b> &middot; <b>${state.aiCorrect}</b> AI`;
+  }
+}
+
+// Rotating opening lines so the AI never repeats back-to-back.
 const INTROS = [
   "Question {n}. Let's see what you've got, human.",
   "Question {n}. I've already solved this. Have you?",
@@ -208,8 +253,7 @@ function nextIntro() {
 function refreshLifelines() {
   ["peek", "copy", "save"].forEach((name) => {
     const btn = $("life-" + name);
-    const available = state.lifelines[name] && !state.answered;
-    btn.disabled = !available;
+    btn.disabled = !(state.lifelines[name] && !state.answered);
     btn.classList.toggle("used", !state.lifelines[name]);
   });
   $("life-save").classList.toggle("armed", state.saveArmed);
@@ -222,52 +266,87 @@ function setAi(face, text, thinking = false) {
 }
 
 /* ============================================================
-   Answering
+   Timer
    ============================================================ */
-function choose(i) {
+function startTimer() {
+  stopTimer();
+  const total = state.mode === "sudden" ? TIME_SUDDEN : TIME_CLASSIC;
+  state.timeLeft = total;
+  const fill = $("timer-fill");
+  const num = $("timer-num");
+  const paint = () => {
+    const frac = Math.max(0, state.timeLeft / total);
+    fill.style.width = (frac * 100) + "%";
+    num.textContent = Math.ceil(state.timeLeft);
+    const urgent = state.timeLeft <= 5;
+    $("timer").classList.toggle("urgent", urgent);
+  };
+  paint();
+  let lastWhole = Math.ceil(state.timeLeft);
+  state.timerId = setInterval(() => {
+    state.timeLeft -= 0.1;
+    const whole = Math.ceil(state.timeLeft);
+    if (whole !== lastWhole && whole <= 5 && whole >= 1) sfx("tick");
+    lastWhole = whole;
+    if (state.timeLeft <= 0) { stopTimer(); resolveAnswer(-1); return; } // ran out
+    paint();
+  }, 100);
+}
+function stopTimer() {
+  if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+  $("timer").classList.remove("urgent");
+}
+
+/* ============================================================
+   Answering  (pickedIndex === -1 means the clock ran out)
+   ============================================================ */
+function resolveAnswer(pickedIndex) {
   if (state.answered) return;
   state.answered = true;
-  const q = state.questions[state.idx];
+  stopTimer();
+
+  const q = state.q;
   const opts = document.querySelectorAll(".opt");
   opts.forEach((o) => (o.disabled = true));
 
-  const youRight = i === q.answer;
+  const timedOut = pickedIndex === -1;
+  const youRight = !timedOut && pickedIndex === q.answer;
   const aiRight = state.aiPick === q.answer;
   if (aiRight) state.aiCorrect++;
 
-  // Mark correct answer + your pick
   opts[q.answer].classList.add("correct");
-  if (!youRight) opts[i].classList.add("wrong");
-
-  // Show what the AI picked
+  if (!timedOut && !youRight) opts[pickedIndex].classList.add("wrong");
   tagAiPick();
-  $("score-ai").textContent = state.aiCorrect;
-
+  updateScoreline();
   refreshLifelines();
+
+  // Adaptive difficulty: reward correct answers, ease off after a miss.
+  state.adapt = youRight ? Math.min(state.adapt + 0.5, 1.6) : Math.max(state.adapt - 1, -1);
 
   if (youRight) {
     state.youCorrect++;
-    $("score-you").textContent = state.youCorrect;
+    if (state.mode === "sudden") state.streak++;
+    updateScoreline();
     updateBanked();
     sfx("correct");
-    setAi("😎", aiRewardLine(aiRight));
-    proceedAfter(true);
+    setAi("😎", timedOutNote(false) + aiRewardLine(aiRight));
+    proceed(true, youRight, aiRight);
   } else if (state.saveArmed) {
-    // Lifeline saves you — game continues.
     state.saveArmed = false;
     sfx("save");
-    setAi("😅", "Whoa! Your <b>🛟 Save</b> lifeline caught that one. You live to climb again!");
-    proceedAfter(true);
+    setAi("😅", `${timedOut ? "Out of time — but your " : "Whoa! Your "}<b>🛟 Save</b> lifeline caught that one. Keep going!`);
+    proceed(true, youRight, aiRight);
   } else {
     sfx("wrong");
-    setAi("🤖", aiTauntLine(aiRight));
-    proceedAfter(false);
+    setAi("🤖", timedOutNote(timedOut) + aiTauntLine(aiRight));
+    proceed(false, youRight, aiRight);
   }
 }
 
+const timedOutNote = (t) => (t ? "Too slow! " : "");
+
 function tagAiPick() {
-  const opts = document.querySelectorAll(".opt");
-  const el = opts[state.aiPick];
+  const el = document.querySelectorAll(".opt")[state.aiPick];
   el.classList.add("ai-pick");
   if (!el.querySelector(".ai-tag")) {
     const tag = document.createElement("span");
@@ -278,26 +357,34 @@ function tagAiPick() {
 }
 
 function updateBanked() {
-  // Bank the highest milestone amount at or below the rung just cleared.
+  if (state.mode !== "classic") return;
   for (let m = MILESTONES.length - 1; m >= 0; m--) {
     if (state.idx >= MILESTONES[m]) { state.banked = LADDER[MILESTONES[m]]; break; }
   }
   if (state.idx === LADDER.length - 1) state.banked = LADDER[LADDER.length - 1];
 }
 
-function proceedAfter(survived) {
+function proceed(survived, youRight, aiRight) {
+  if (state.mode === "sudden") return proceedSudden(survived, youRight, aiRight);
+
+  // ---- Classic ----
   const last = state.idx === LADDER.length - 1;
-  if (!survived) {
-    setTimeout(() => endGame(false), 1400);
-    return;
-  }
-  if (last) {
-    setTimeout(() => endGame(true), 1200);
-    return;
-  }
+  if (!survived) { setTimeout(() => endGame(false), 1500); return; }
+  if (last) { setTimeout(() => endGame(true), 1300); return; }
   const btn = $("btn-next");
   btn.classList.remove("hidden");
   btn.textContent = state.idx === LADDER.length - 2 ? "Final Question →" : "Next Question →";
+}
+
+function proceedSudden(survived, youRight, aiRight) {
+  // You got it and the AI blew it — instant victory.
+  if (youRight && !aiRight) { setTimeout(() => endGame(true, "ai-cracked"), 1400); return; }
+  // You missed (and weren't saved) — eliminated.
+  if (!survived) { setTimeout(() => endGame(false), 1500); return; }
+  // Both correct (or you were saved) — keep going.
+  const btn = $("btn-next");
+  btn.classList.remove("hidden");
+  btn.textContent = "Next Round →";
 }
 
 function nextQuestion() {
@@ -313,9 +400,8 @@ function useLifeline(name) {
 
   if (name === "peek") {
     state.lifelines.peek = false;
-    state.peeked = true;
     tagAiPick();
-    const conf = state.questions[state.idx].aiTricky ? "pretty confident, but…" : "quite confident.";
+    const conf = state.q.aiTricky ? "pretty confident, but…" : "quite confident.";
     setAi("🤔", `I'm going with <b>${"ABCD"[state.aiPick]}</b>. I'm ${conf}`);
     sfx("blip");
     refreshLifelines();
@@ -325,7 +411,7 @@ function useLifeline(name) {
     sfx("blip");
     setAi("🤖", "Copying my answer… good luck with that.", true);
     refreshLifelines();
-    setTimeout(() => choose(state.aiPick), 650);
+    setTimeout(() => resolveAnswer(state.aiPick), 650);
 
   } else if (name === "save") {
     state.lifelines.save = false;
@@ -349,44 +435,88 @@ function aiTauntLine(aiRight) {
 }
 
 /* ============================================================
-   End screen
+   End screen + sharing
    ============================================================ */
-function endGame(won) {
-  const smarter = state.youCorrect > state.aiCorrect;
-  $("end-winnings").textContent = fmt(won ? LADDER[LADDER.length - 1] : state.banked);
-  $("end-you").textContent = state.youCorrect;
-  $("end-ai").textContent = state.aiCorrect;
+let lastResult = null; // for the share card
 
-  if (won) {
-    $("end-emoji").textContent = "🏆";
-    $("end-title").textContent = "You Beat the Machine!";
-    $("end-msg").innerHTML = `You climbed all the way to <b>${fmt(LADDER[LADDER.length - 1])}</b>. ` +
-      (smarter ? "And you out-answered the AI. You really <i>are</i> smarter than an AI!"
-               : "The AI kept pace — but the top of the ladder is yours.");
-    sfx("win");
-    confettiBurst();
+function endGame(won, reason) {
+  document.body.classList.remove("sudden");
+  const smarter = state.youCorrect > state.aiCorrect;
+
+  if (state.mode === "classic") {
+    const winnings = won ? LADDER[LADDER.length - 1] : state.banked;
+    $("end-stat-main").textContent = fmt(winnings);
+    $("end-stat-label").textContent = "Banked";
+    if (won) {
+      $("end-emoji").textContent = "🏆";
+      $("end-title").textContent = "You Beat the Machine!";
+      $("end-msg").innerHTML = `You climbed all the way to <b>${fmt(winnings)}</b>. ` +
+        (smarter ? "And you out-answered the AI. You really <i>are</i> smarter than an AI!"
+                 : "The AI kept pace — but the top of the ladder is yours.");
+      sfx("win"); confettiBurst();
+    } else {
+      $("end-emoji").textContent = smarter ? "🙂" : "🤖";
+      $("end-title").textContent = smarter ? "Not Bad, Human!" : "The AI Wins This Round";
+      $("end-msg").innerHTML = `You reached question <b>${state.idx + 1}</b> and banked <b>${fmt(winnings)}</b>. ` +
+        (smarter ? "You still out-scored the AI up to that point — respectable!" : "The AI edged you out. Run it back?");
+      if (smarter) { sfx("correct"); confettiBurst(0.5); } else sfx("wrong");
+    }
+    updateBest("aysta_best", winnings, fmt);
+    lastResult = { mode: "Classic", won, main: fmt(winnings), you: state.youCorrect, ai: state.aiCorrect };
   } else {
-    $("end-emoji").textContent = smarter ? "🙂" : "🤖";
-    $("end-title").textContent = smarter ? "Not Bad, Human!" : "The AI Wins This Round";
-    $("end-msg").innerHTML = `You made it to question <b>${state.idx + 1}</b> and banked <b>${fmt(state.banked)}</b>. ` +
-      (smarter ? "You still out-scored the AI up to that point — respectable!"
-               : "The AI edged you out. Run it back?");
-    if (smarter) { sfx("correct"); confettiBurst(0.5); }
-    else sfx("wrong");
+    // ---- Sudden death ----
+    $("end-stat-main").textContent = state.streak;
+    $("end-stat-label").textContent = "Streak";
+    if (won) {
+      $("end-emoji").textContent = "⚡";
+      $("end-title").textContent = reason === "ai-cracked" ? "You Outlasted the AI!" : "You Survived!";
+      $("end-msg").innerHTML = `You answered <b>${state.streak}</b> in a row and the <b>AI cracked first</b>. Human intuition wins!`;
+      sfx("win"); confettiBurst();
+    } else {
+      $("end-emoji").textContent = "🤖";
+      $("end-title").textContent = "Eliminated!";
+      $("end-msg").innerHTML = `You survived <b>${state.streak}</b> round${state.streak === 1 ? "" : "s"} before slipping up. ` +
+        (state.aiCorrect >= state.streak + 1 ? "The AI is still standing." : "But you gave the AI a real scare!");
+      sfx("wrong");
+    }
+    updateBest("aysta_best_streak", state.streak, String);
+    lastResult = { mode: "Sudden Death", won, main: state.streak + " streak", you: state.youCorrect, ai: state.aiCorrect };
   }
 
-  // Track and show the player's personal best.
-  const winnings = won ? LADDER[LADDER.length - 1] : state.banked;
-  let best = 0;
-  try { best = parseInt(localStorage.getItem("aysta_best") || "0", 10) || 0; } catch (e) {}
-  const isRecord = winnings > best;
-  if (isRecord) { best = winnings; try { localStorage.setItem("aysta_best", String(best)); } catch (e) {} }
-  const bestEl = $("end-best");
-  if (bestEl) bestEl.innerHTML = isRecord && winnings > 0
-    ? `🎉 New personal best: <b>${fmt(best)}</b>`
-    : `Personal best: <b>${fmt(best)}</b>`;
-
+  $("end-you").textContent = state.youCorrect;
+  $("end-ai").textContent = state.aiCorrect;
+  $("btn-share").textContent = "📋 Share result";
   show("screen-end");
+}
+
+function updateBest(key, value, fmtFn) {
+  let best = 0;
+  try { best = parseInt(localStorage.getItem(key) || "0", 10) || 0; } catch (e) {}
+  const isRecord = value > best;
+  if (isRecord) { best = value; try { localStorage.setItem(key, String(best)); } catch (e) {} }
+  const el = $("end-best");
+  el.innerHTML = isRecord && value > 0
+    ? `🎉 New personal best: <b>${fmtFn(best)}</b>`
+    : `Personal best: <b>${fmtFn(best)}</b>`;
+}
+
+function shareResult() {
+  if (!lastResult) return;
+  const r = lastResult;
+  const url = "https://jnpeters314.github.io/are-you-smarter-than-an-ai/";
+  const brag = r.won ? "I beat the AI" : "The AI got me";
+  const text = `🤖 Are You Smarter Than an AI? — ${r.mode}\n${brag}! Result: ${r.main} · Me ${r.you} vs AI ${r.ai}.\nThink you can do better? ${url}`;
+  const done = () => { $("btn-share").textContent = "✅ Copied!"; setTimeout(() => ($("btn-share").textContent = "📋 Share result"), 2000); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement("textarea");
+  ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) {}
+  document.body.removeChild(ta);
 }
 
 /* ============================================================
@@ -402,21 +532,23 @@ function sfx(type) {
       wrong: [[196, 0], [155, 0.12]],
       save: [[440, 0], [660, 0.1], [880, 0.2]],
       blip: [[720, 0]],
+      tick: [[1200, 0]],
       win: [[523, 0], [659, 0.12], [784, 0.24], [1047, 0.38], [784, 0.5], [1047, 0.6]],
     }[type] || [[440, 0]];
+    const dur = type === "tick" ? 0.07 : 0.22;
     notes.forEach(([freq, t]) => {
       const osc = actx.createOscillator();
       const gain = actx.createGain();
       osc.type = type === "wrong" ? "sawtooth" : "triangle";
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0.0001, now + t);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.22);
+      gain.gain.exponentialRampToValueAtTime(type === "tick" ? 0.12 : 0.18, now + t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + dur);
       osc.connect(gain).connect(actx.destination);
       osc.start(now + t);
-      osc.stop(now + t + 0.24);
+      osc.stop(now + t + dur + 0.02);
     });
-  } catch (e) { /* audio not available — no problem */ }
+  } catch (e) {}
 }
 
 /* ============================================================
@@ -430,27 +562,20 @@ function confettiBurst(scale = 1) {
   const N = Math.floor(160 * scale);
   const parts = Array.from({ length: N }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.35,
-    vx: (Math.random() - 0.5) * 14,
-    vy: Math.random() * -14 - 4,
-    g: 0.3 + Math.random() * 0.2,
-    size: 5 + Math.random() * 7,
-    color: pick(colors),
-    rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
-    life: 90 + Math.random() * 40,
+    vx: (Math.random() - 0.5) * 14, vy: Math.random() * -14 - 4,
+    g: 0.3 + Math.random() * 0.2, size: 5 + Math.random() * 7,
+    color: pick(colors), rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
   }));
   let frame = 0;
   (function anim() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     parts.forEach((p) => {
-      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life--;
-      ctx.save();
-      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      p.vy += p.g; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
       ctx.restore();
     });
-    frame++;
-    if (frame < 160) requestAnimationFrame(anim);
+    if (++frame < 160) requestAnimationFrame(anim);
     else ctx.clearRect(0, 0, canvas.width, canvas.height);
   })();
 }
@@ -459,8 +584,25 @@ function confettiBurst(scale = 1) {
    Wiring
    ============================================================ */
 function wire() {
+  // Populate category dropdown.
+  const sel = $("sel-category");
+  CATEGORIES.forEach((c) => {
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c === "Mixed" ? "🎲 Mixed (everything)" : c;
+    sel.appendChild(o);
+  });
+
+  // Mode toggle.
+  document.querySelectorAll(".mode-btn").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      chosenMode = btn.dataset.mode;
+      document.querySelectorAll(".mode-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    })
+  );
+
   $("btn-start").addEventListener("click", startGame);
-  $("btn-again").addEventListener("click", startGame);
+  $("btn-again").addEventListener("click", () => show("screen-start"));
+  $("btn-share").addEventListener("click", shareResult);
   $("btn-next").addEventListener("click", nextQuestion);
   $("btn-how").addEventListener("click", () => $("modal").classList.remove("hidden"));
   $("btn-close-modal").addEventListener("click", () => $("modal").classList.add("hidden"));
@@ -470,14 +612,13 @@ function wire() {
     btn.addEventListener("click", () => useLifeline(btn.dataset.life))
   );
 
-  // Keyboard: A/B/C/D or 1-4 to answer, N for next.
   document.addEventListener("keydown", (e) => {
     if (!$("screen-game").classList.contains("active")) return;
     const k = e.key.toLowerCase();
     const map = { a: 0, b: 1, c: 2, d: 3, 1: 0, 2: 1, 3: 2, 4: 3 };
     if (k in map && !state.answered) {
       const opts = document.querySelectorAll(".opt");
-      if (opts[map[k]]) choose(map[k]);
+      if (opts[map[k]]) resolveAnswer(map[k]);
     } else if (k === "n" && !$("btn-next").classList.contains("hidden")) {
       nextQuestion();
     }

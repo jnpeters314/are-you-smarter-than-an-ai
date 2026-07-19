@@ -5,13 +5,23 @@ A quick, fun trivia game show — inspired by *Are You Smarter Than a 5th Grader
 ### ▶️ [Play it live](https://jnpeters314.github.io/are-you-smarter-than-an-ai/)
 
 ## How to play
-- Answer 11 questions, Grades 1–5, getting harder as you climb.
-- The AI answers every question too — beat its score to prove you're smarter.
-- Use each lifeline **once per game**:
-  - **👀 Peek** — reveal the AI's answer, then decide for yourself.
-  - **📋 Copy** — instantly lock in the AI's pick (risky when it's being silly!).
-  - **🛟 Save** — survive one wrong answer and keep climbing.
-- Keyboard shortcuts: `A`/`B`/`C`/`D` (or `1`–`4`) to answer, `N` for next.
+Pick a **category** and a **mode**, then take on the AI:
+
+- **🪜 Classic Ladder** — 11 questions climbing $100 → $1,000,000. Difficulty **adapts** to how well you're doing.
+- **⚔️ Sudden Death** — you and the AI face the same questions. One miss and you're out — but if the *AI* cracks first (it fumbles the silly ones!), you win.
+
+Every question is **timed** ⏱️ — beat the bar or it counts against you. The AI answers too; beat its score to prove you're smarter.
+
+**Categories:** 🎲 Mixed · Pop Culture · Math · Science & Nature · History & Geography · Words & Language · Brain Teasers.
+
+**Lifelines** (once each per game):
+- **👀 Peek** — reveal the AI's answer, then decide for yourself.
+- **📋 Copy** — instantly lock in the AI's pick (risky when it's being silly!).
+- **🛟 Save** — survive one wrong answer (or a timeout) and keep going.
+
+Share your result with one tap, and the game tracks your **personal best**. Keyboard shortcuts: `A`/`B`/`C`/`D` (or `1`–`4`) to answer, `N` for next.
+
+**187 questions** across all grades and categories, with a "recently seen" memory so a dozen+ games in a row rarely repeat.
 
 ## Run locally
 It's plain HTML/CSS/JS — no build step. Just open `index.html`, or:
